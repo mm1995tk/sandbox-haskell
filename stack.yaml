@@ -1,0 +1,7 @@
+resolver: lts-21.13
+
+packages:
+  - .
+
+extra-deps:
+  - validation-selective-0.2.0.0

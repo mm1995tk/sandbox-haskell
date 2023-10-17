@@ -1,0 +1,8 @@
+.stack-work/
+local/
+dist-newstyle/
+
+src/Sandbox.hs
+
+docker/*/data
+docker/*/dump
