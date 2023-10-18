@@ -10,14 +10,16 @@ import Hasql.Encoders qualified as E
 import Hasql.Pool
 import Hasql.Session
 
-import Control.Lens (Profunctor (dimap))
-import Data.Int (Int32, Int64)
+import Data.Int (Int32)
 import Data.Profunctor (lmap)
 import Data.Text (Text)
 import Data.Time
 import Data.Vector (Vector, fromList, snoc)
 import Hasql.Statement (Statement (..))
-import Hasql.TH (foldStatement, maybeStatement, resultlessStatement, singletonStatement, vectorStatement)
+import Hasql.Transaction qualified as Tx
+
+import Hasql.TH (maybeStatement, resultlessStatement, singletonStatement, vectorStatement)
+import Hasql.Transaction.Sessions (IsolationLevel (RepeatableRead), Mode (Write), transaction)
 import MyLib.Utils ()
 
 data Person = Person
@@ -27,32 +29,34 @@ data Person = Person
   }
   deriving (Show)
 
-inConnection :: (Pool -> IO a) -> IO a
-inConnection f = getPool >>= \pool -> f pool <* release' pool
+-- inConnection :: (Pool -> IO a) -> IO a
+-- inConnection f = getPool >>= \pool -> f pool <* release' pool
+
+inConnection :: Session a -> IO (Either UsageError a)
+inConnection f = getPool >>= \pool -> use pool f <* release' pool
 
 getPool :: IO Pool
 getPool = acquire 1 (secondsToDiffTime 30) (secondsToDiffTime 30 * 5) $ settings "localhost" 5431 "postgres" "postgres" "postgres"
 
 cleanUpDb :: IO (Either UsageError ())
-cleanUpDb = inConnection . flip use $ statement () $ Statement "truncate person" E.noParams D.noResult True
+cleanUpDb = inConnection $ statement () $ Statement "truncate person" E.noParams D.noResult True
 
 release' :: Pool -> IO ()
 release' c = putStrLn "released" *> release c
 
-
-
-multiInsert :: [Person] -> Session ()
-multiInsert ps =
-  statement
-    (fromList ps)
-    $ encode
-      [resultlessStatement|
+multiInsert' :: Statement (Vector Person) ()
+multiInsert' =
+  encode
+    [resultlessStatement|
     insert into 
       person (person_id, age, full_name) 
     select * from unnest($1 :: text[], $2 :: int4[], $3 :: text[] )
     |]
   where
     encode = lmap $ foldl (\(a, b, c) Person{..} -> (snoc a personId, snoc b age, snoc c fullName)) (mempty, mempty, mempty)
+
+multiInsert :: [Person] -> Session ()
+multiInsert = flip statement multiInsert' . fromList
 
 multiUpdate :: [Person] -> Session ()
 multiUpdate ps =
@@ -134,3 +138,17 @@ findMany =
     from person 
     where age = $1 :: int4
   |]
+
+sampleTx :: Tx.Transaction ()
+sampleTx = do
+  Tx.statement (fromList [Person{fullName = "hgyuf", age = 45, personId = "jdfdfdui"}]) multiInsert'
+  Tx.statement
+    ( fromList
+        [ Person{fullName = "dfghj", age = 29, personId = "poeiyf"}
+        , Person{fullName = "fdfdfuuu", age = 65, personId = "gfydee"}
+        ]
+    )
+    multiInsert'
+
+defaultTx :: Tx.Transaction a -> Session a
+defaultTx = transaction RepeatableRead Write
