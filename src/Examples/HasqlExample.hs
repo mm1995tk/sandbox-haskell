@@ -139,6 +139,28 @@ findMany =
     where age = $1 :: int4
   |]
 
+findMany' :: [Int32] -> Session (Vector Person)
+findMany' xs =
+  statement (fromList xs)
+    $ fmap
+      (fmap \(personId, fullName, age) -> Person{..})
+      [vectorStatement|
+    select 
+      person_id :: text
+      ,full_name :: text
+      , age :: int4 
+    from person 
+    where age = any($1 :: int4[])
+  |]
+
+deleteById :: [Text] -> Session ()
+deleteById ids =
+  statement
+    (fromList ids)
+    [resultlessStatement|
+    delete from person where person_id = any($1::text[])
+  |]
+
 sampleTx :: Tx.Transaction ()
 sampleTx = do
   Tx.statement (fromList [Person{fullName = "hgyuf", age = 45, personId = "jdfdfdui"}]) multiInsert'
