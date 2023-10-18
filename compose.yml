@@ -1,14 +1,14 @@
-version: '3'
+version: "3"
 
 services:
   haskell_sandbox_pg:
     image: postgres
     ports:
-      - '5431:5432'
+      - "$POSTGRES_PORT:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_INITDB_ARGS: '--encoding=UTF-8'
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
       POSTGRES_DB: postgres
       TZ: UTC
     volumes:
@@ -24,10 +24,10 @@ services:
   #     - './docker/session-store/data:/data'
 
   session_test_store:
-    image: 'redis:latest'
+    image: "redis:latest"
     ports:
-      - '6380:6379'
+      - "6380:6379"
     volumes:
-      - './docker/session-test-store/data:/data'
+      - "./docker/session-test-store/data:/data"
     profiles:
       - test

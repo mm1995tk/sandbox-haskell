@@ -1,3 +1,3 @@
 #/bin/bash
 
-psql -U postgres -p 5431 -h localhost
+psql -U postgres -p $POSTGRES_PORT -h localhost
