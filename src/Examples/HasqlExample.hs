@@ -3,22 +3,18 @@
 
 module Examples.HasqlExample where
 
-import Hasql.Connection hiding (acquire, release)
-
-import Hasql.Decoders qualified as D
-import Hasql.Encoders qualified as E
-import Hasql.Pool
-import Hasql.Session
-
+import Control.Concurrent.Async (concurrently)
 import Data.Int (Int32)
 import Data.Profunctor (lmap)
 import Data.Text (Text)
 import Data.Time
 import Data.Vector (Vector, fromList, snoc)
+import Hasql.Connection hiding (acquire, release)
+import Hasql.Pool
+import Hasql.Session
 import Hasql.Statement (Statement (..))
-import Hasql.Transaction qualified as Tx
-
 import Hasql.TH (maybeStatement, resultlessStatement, singletonStatement, vectorStatement)
+import Hasql.Transaction qualified as Tx
 import Hasql.Transaction.Sessions (IsolationLevel (RepeatableRead), Mode (Write), transaction)
 import MyLib.Utils ()
 
@@ -32,14 +28,21 @@ data Person = Person
 -- inConnection :: (Pool -> IO a) -> IO a
 -- inConnection f = getPool >>= \pool -> f pool <* release' pool
 
-inConnection :: Session a -> IO (Either UsageError a)
-inConnection f = getPool >>= \pool -> use pool f <* release' pool
+inConnection :: IO (Session a) -> IO (Either UsageError a)
+inConnection f = do
+  (pool, f') <- concurrently getPool f
+  use pool f' <* release' pool
+
+notRelease :: IO (Session a) -> IO (Pool, Either UsageError a)
+notRelease f = do
+  (pool, f') <- concurrently getPool f
+  (pool,) <$> use pool f'
 
 getPool :: IO Pool
-getPool = acquire 1 (secondsToDiffTime 30) (secondsToDiffTime 30 * 5) $ settings "localhost" 5431 "postgres" "postgres" "postgres"
+getPool = acquire 10 (secondsToDiffTime 30) (secondsToDiffTime 30 * 5) $ settings "localhost" 5431 "postgres" "postgres" "postgres"
 
-cleanUpDb :: IO (Either UsageError ())
-cleanUpDb = inConnection $ statement () $ Statement "truncate person" E.noParams D.noResult True
+-- cleanUpDb :: IO (Either UsageError ())
+-- cleanUpDb = inConnection $ statement () $ Statement "truncate person" E.noParams D.noResult True
 
 release' :: Pool -> IO ()
 release' c = putStrLn "released" *> release c
