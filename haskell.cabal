@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      ApiExample.Lib
       Examples.AsyncExample
       Examples.ConduitExample
       Examples.DomainCopied
@@ -72,10 +73,13 @@ library
     , mtl
     , profunctors
     , safe-exceptions
+    , servant-server
     , text
     , time
     , validation-selective
     , vector
+    , wai
+    , warp
   default-language: GHC2021
 
 executable haskell-exe
@@ -116,10 +120,13 @@ executable haskell-exe
     , mtl
     , profunctors
     , safe-exceptions
+    , servant-server
     , text
     , time
     , validation-selective
     , vector
+    , wai
+    , warp
   default-language: GHC2021
 
 test-suite haskell-test
@@ -161,8 +168,11 @@ test-suite haskell-test
     , mtl
     , profunctors
     , safe-exceptions
+    , servant-server
     , text
     , time
     , validation-selective
     , vector
+    , wai
+    , warp
   default-language: GHC2021

@@ -35,6 +35,10 @@ dependencies:
   - vector
   - profunctors
 
+  - servant-server
+  - wai
+  - warp
+
   # validated applicative functor
   - validation-selective
 
