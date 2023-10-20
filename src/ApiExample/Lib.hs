@@ -1,6 +1,10 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Use newtype instead of data" #-}
 module ApiExample.Lib (startApp) where
 
 import ApiExample.Domain (Person (..))
+import ApiExample.Infrastructure.Aggregate.Person (findMany')
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Aeson
 import Data.Aeson.TH (deriveJSON)
@@ -9,6 +13,10 @@ import Data.Map qualified as M
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8Lenient)
+import Data.Vector qualified as Vec
+import Hasql.Pool (Pool, UsageError, use)
+import Hasql.Session qualified as HS
+import MyLib.Support (getPool)
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
@@ -23,9 +31,24 @@ parseCookies cookieText =
   toTuple [key, value] = (key, value)
   toTuple _ = error "Invalid cookie string format"
 
+extractCookies :: Request -> Maybe (M.Map Text Text)
+extractCookies req = M.fromList . parseCookies . decodeUtf8Lenient <$> lookup "cookie" (requestHeaders req)
 
+data Session = Session {db :: forall a. HS.Session a -> IO (Either UsageError a)}
 
-$(deriveJSON defaultOptions ''Person)
+type instance AuthServerData (AuthProtect "cookie") = Session
+genAuthServerContext :: Context (AuthHandler Request Session ': '[])
+genAuthServerContext = authHandler :. EmptyContext
+
+authHandler :: AuthHandler Request Session
+authHandler = mkAuthHandler handler
+ where
+  handler req = case M.lookup "session-id" =<< extractCookies req of
+    Just cookie -> do
+      pool <- liftIO getPool
+
+      liftIO $ print cookie $> Session{db = use pool}
+    _ -> throwError err401
 
 type API = ListUser :<|> ListUser'
 
@@ -41,12 +64,7 @@ type ListUser' =
     :> Capture "ppp" Text
     :> Get '[JSON] Person
 
-data Session = Session {poi :: Int -> Text, name :: Text}
-
-type instance AuthServerData (AuthProtect "cookie") = Session
-
-genAuthServerContext :: Context (AuthHandler Request Session ': '[])
-genAuthServerContext = authHandler :. EmptyContext
+$(deriveJSON defaultOptions ''Person)
 
 startApp :: IO ()
 startApp = run 8080 $ serveWithContext @API Proxy genAuthServerContext server
@@ -58,9 +76,19 @@ handleGetUser :: Server ListUser
 handleGetUser h = liftIO $ print h *> loadUsers
 
 handlePpp :: Server ListUser'
-handlePpp _ _ uid = do
-  user <- liftIO $ findById uid
-  maybe (throwError err404) pure user
+handlePpp Session{db} _ uid = do
+  let j = findMany' [uid]
+  users <- liftIO $ db j
+  case users of
+    Right users -> maybe (throwError err404) pure (Vec.headM users)
+    Left _ -> throwError err500
+
+loadUsers :: IO [Person]
+loadUsers =
+  pure
+    [ Person{personId = "abcde", age = 20, fullName = "bash"}
+    , Person{personId = "fghjk", age = 28, fullName = "zsh"}
+    ]
 
 userMap :: IO (M.Map Text Person)
 userMap = do
@@ -69,20 +97,3 @@ userMap = do
 
 findById :: Text -> IO (Maybe Person)
 findById n = M.lookup n <$> userMap
-
-authHandler :: AuthHandler Request Session
-authHandler = mkAuthHandler handler
- where
-  handler req = case M.lookup "session-id" =<< extractCookies req of
-    Just cookie -> liftIO $ print cookie $> Session{name = "xxx", poi = const "poi"}
-    _ -> throwError err401
-
-extractCookies :: Request -> Maybe (M.Map Text Text)
-extractCookies req = M.fromList . parseCookies . decodeUtf8Lenient <$> lookup "cookie" (requestHeaders req)
-
-loadUsers :: IO [Person]
-loadUsers =
-  pure
-    [ Person{personId = "abcde", age = 20, fullName = "bash"}
-    , Person{personId = "fghjk", age = 28, fullName = "zsh"}
-    ]

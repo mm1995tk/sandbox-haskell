@@ -109,7 +109,7 @@ findMany =
     where age = $1 :: int4
   |]
 
-findMany' :: [Int32] -> Session (Vector Person)
+findMany' :: [Text] -> Session (Vector Person)
 findMany' xs =
   statement (fromList xs)
     $ fmap
@@ -120,7 +120,7 @@ findMany' xs =
       ,full_name :: text
       , age :: int4 
     from person 
-    where age = any($1 :: int4[])
+    where person_id = any($1 :: text[])
   |]
 
 deleteById :: [Text] -> Session ()
