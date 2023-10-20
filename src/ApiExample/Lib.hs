@@ -72,9 +72,11 @@ $(deriveJSON defaultOptions ''Person)
 
 startApp :: IO ()
 startApp = do
-  port <- getEnv "SERVER_PORT"
-  p <- getPool
-  run (read @Int port) $ serveWithContext @API Proxy (genAuthServerContext p) server
+  port <- read @Int <$> getEnv "SERVER_PORT"
+  ctx <- genAuthServerContext <$> getPool
+  run port $ serveWithContext api ctx server
+ where
+  api = Proxy @API
 
 server :: Server API
 server = handleGetUsers :<|> handleGetUser
