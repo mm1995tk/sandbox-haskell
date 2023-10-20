@@ -14,7 +14,7 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8Lenient)
 import Data.Vector qualified as Vec
-import Hasql.Pool (Pool, UsageError, use)
+import Hasql.Pool (Pool, use)
 import Hasql.Session qualified as HS
 import MyLib.Support (getPool)
 import Network.Wai
@@ -34,21 +34,24 @@ parseCookies cookieText =
 extractCookies :: Request -> Maybe (M.Map Text Text)
 extractCookies req = M.fromList . parseCookies . decodeUtf8Lenient <$> lookup "cookie" (requestHeaders req)
 
-data Session = Session {db :: forall a. HS.Session a -> IO (Either UsageError a)}
+type UseInfra = forall a. HS.Session a -> Handler a
+data Session = Session {useInfra :: UseInfra}
 
 type instance AuthServerData (AuthProtect "cookie") = Session
-genAuthServerContext :: Context (AuthHandler Request Session ': '[])
-genAuthServerContext = authHandler :. EmptyContext
+genAuthServerContext :: Pool -> Context (AuthHandler Request Session ': '[])
+genAuthServerContext p = authHandler p :. EmptyContext
 
-authHandler :: AuthHandler Request Session
-authHandler = mkAuthHandler handler
+authHandler :: Pool -> AuthHandler Request Session
+authHandler pool = mkAuthHandler handler
  where
   handler req = case M.lookup "session-id" =<< extractCookies req of
-    Just cookie -> do
-      pool <- liftIO getPool
-
-      liftIO $ print cookie $> Session{db = use pool}
+    Just sessionId -> liftIO $ mkSession sessionId
     _ -> throwError err401
+
+  mkSession sessionId = print ("sessionId: " <> sessionId) $> Session{useInfra}
+
+  useInfra :: UseInfra
+  useInfra s = liftIO (use pool s) >>= either (const $ throwError err500) pure
 
 type API = ListUser :<|> ListUser'
 
@@ -67,21 +70,20 @@ type ListUser' =
 $(deriveJSON defaultOptions ''Person)
 
 startApp :: IO ()
-startApp = run 8080 $ serveWithContext @API Proxy genAuthServerContext server
+startApp = do
+  p <- getPool
+  run 8080 $ serveWithContext @API Proxy (genAuthServerContext p) server
 
 server :: Server API
-server = handleGetUser :<|> handlePpp
+server = handleGetUsers :<|> handleGetUser
 
-handleGetUser :: Server ListUser
-handleGetUser h = liftIO $ print h *> loadUsers
+handleGetUsers :: Server ListUser
+handleGetUsers h = liftIO $ print h *> loadUsers
 
-handlePpp :: Server ListUser'
-handlePpp Session{db} _ uid = do
-  let j = findMany' [uid]
-  users <- liftIO $ db j
-  case users of
-    Right users -> maybe (throwError err404) pure (Vec.headM users)
-    Left _ -> throwError err500
+handleGetUser :: Server ListUser'
+handleGetUser Session{useInfra} _ uid = do
+  users <- useInfra (findMany' [uid])
+  maybe (throwError err404) pure (Vec.headM users)
 
 loadUsers :: IO [Person]
 loadUsers =
@@ -89,11 +91,3 @@ loadUsers =
     [ Person{personId = "abcde", age = 20, fullName = "bash"}
     , Person{personId = "fghjk", age = 28, fullName = "zsh"}
     ]
-
-userMap :: IO (M.Map Text Person)
-userMap = do
-  users <- loadUsers
-  return $ M.fromList $ (\u@Person{..} -> (personId, u)) <$> users
-
-findById :: Text -> IO (Maybe Person)
-findById n = M.lookup n <$> userMap
