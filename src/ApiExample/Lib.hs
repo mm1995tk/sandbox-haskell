@@ -1,5 +1,6 @@
 module ApiExample.Lib (startApp) where
 
+import ApiExample.Domain (Person (..))
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Aeson
 import Data.Aeson.TH (deriveJSON)
@@ -22,28 +23,23 @@ parseCookies cookieText =
   toTuple [key, value] = (key, value)
   toTuple _ = error "Invalid cookie string format"
 
-data User = User
-  { userId :: Int
-  , userFirstName :: Text
-  , userLastName :: Text
-  }
-  deriving (Eq, Show)
 
-$(deriveJSON defaultOptions ''User)
+
+$(deriveJSON defaultOptions ''Person)
 
 type API = ListUser :<|> ListUser'
 
 type ListUser =
   "users"
     :> Header "user-agent" Text
-    :> Get '[JSON] [User]
+    :> Get '[JSON] [Person]
 
 type ListUser' =
   "users"
     :> AuthProtect "cookie"
     :> Header "user-agent" Text
-    :> Capture "ppp" Int
-    :> Get '[JSON] User
+    :> Capture "ppp" Text
+    :> Get '[JSON] Person
 
 data Session = Session {poi :: Int -> Text, name :: Text}
 
@@ -66,12 +62,12 @@ handlePpp _ _ uid = do
   user <- liftIO $ findById uid
   maybe (throwError err404) pure user
 
-userMap :: IO (M.Map Int User)
+userMap :: IO (M.Map Text Person)
 userMap = do
   users <- loadUsers
-  return $ M.fromList $ (\u@User{..} -> (userId, u)) <$> users
+  return $ M.fromList $ (\u@Person{..} -> (personId, u)) <$> users
 
-findById :: Int -> IO (Maybe User)
+findById :: Text -> IO (Maybe Person)
 findById n = M.lookup n <$> userMap
 
 authHandler :: AuthHandler Request Session
@@ -84,9 +80,9 @@ authHandler = mkAuthHandler handler
 extractCookies :: Request -> Maybe (M.Map Text Text)
 extractCookies req = M.fromList . parseCookies . decodeUtf8Lenient <$> lookup "cookie" (requestHeaders req)
 
-loadUsers :: IO [User]
+loadUsers :: IO [Person]
 loadUsers =
   pure
-    [ User 1 "Isaac" "Newton"
-    , User 9 "Albert" "Einstein"
+    [ Person{personId = "abcde", age = 20, fullName = "bash"}
+    , Person{personId = "fghjk", age = 28, fullName = "zsh"}
     ]

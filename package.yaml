@@ -69,6 +69,8 @@ default-extensions:
   - NoFieldSelectors
   - QuasiQuotes
   - TemplateHaskell
+  - LambdaCase
+  - MultiWayIf
 
 ghc-options:
   - -Wall

@@ -25,6 +25,10 @@ source-repository head
 
 library
   exposed-modules:
+      ApiExample.Domain
+      ApiExample.Infrastructure
+      ApiExample.Infrastructure.Aggregate.Person
+      ApiExample.Infrastructure.Model
       ApiExample.Lib
       Examples.AsyncExample
       Examples.ConduitExample
@@ -35,6 +39,7 @@ library
       Examples.JsonExample
       Examples.RawAsync
       Examples.TypeLevelExample
+      MyLib.Support
       MyLib.Utils
       MyLib.Validator
       Sandbox
@@ -54,6 +59,8 @@ library
       NoFieldSelectors
       QuasiQuotes
       TemplateHaskell
+      LambdaCase
+      MultiWayIf
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       aeson
@@ -100,6 +107,8 @@ executable haskell-exe
       NoFieldSelectors
       QuasiQuotes
       TemplateHaskell
+      LambdaCase
+      MultiWayIf
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
@@ -148,6 +157,8 @@ test-suite haskell-test
       NoFieldSelectors
       QuasiQuotes
       TemplateHaskell
+      LambdaCase
+      MultiWayIf
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
