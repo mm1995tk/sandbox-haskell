@@ -21,6 +21,7 @@ import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
 import Servant.Server.Experimental.Auth
+import System.Environment (getEnv)
 
 type Cookies = [(T.Text, T.Text)]
 
@@ -71,8 +72,9 @@ $(deriveJSON defaultOptions ''Person)
 
 startApp :: IO ()
 startApp = do
+  port <- getEnv "SERVER_PORT"
   p <- getPool
-  run 8080 $ serveWithContext @API Proxy (genAuthServerContext p) server
+  run (read @Int port) $ serveWithContext @API Proxy (genAuthServerContext p) server
 
 server :: Server API
 server = handleGetUsers :<|> handleGetUser
