@@ -6,6 +6,7 @@ module ApiExample.Lib (startApp) where
 import ApiExample.Domain (Person (..))
 import ApiExample.Infrastructure.Aggregate.Person (findMany')
 import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Monad.Reader (ReaderT (runReaderT), ask)
 import Data.Aeson
 import Data.Aeson.TH (deriveJSON)
 import Data.Functor (($>))
@@ -23,6 +24,10 @@ import Servant
 import Servant.Server.Experimental.Auth
 import System.Environment (getEnv)
 
+type AppM = ReaderT AppCtx Handler
+
+data AppCtx = AppCtx deriving (Show)
+
 type Cookies = [(T.Text, T.Text)]
 
 parseCookies :: T.Text -> Cookies
@@ -35,7 +40,7 @@ parseCookies cookieText =
 extractCookies :: Request -> Maybe (M.Map Text Text)
 extractCookies req = M.fromList . parseCookies . decodeUtf8Lenient <$> lookup "cookie" (requestHeaders req)
 
-type UseInfra = forall a. HS.Session a -> Handler a
+type UseInfra = forall a. HS.Session a -> AppM a
 data Session = Session {useInfra :: UseInfra}
 
 type instance AuthServerData (AuthProtect "cookie") = Session
@@ -74,18 +79,20 @@ startApp :: IO ()
 startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
   ctx <- genAuthServerContext <$> getPool
-  run port $ serveWithContext api ctx server
+  run port $ serveWithContext api ctx serverM
  where
   api = Proxy @API
+  serverM = hoistServerWithContext api (Proxy :: Proxy '[AuthHandler Request Session]) (`runReaderT` AppCtx) server
 
-server :: Server API
 server = handleGetUsers :<|> handleGetUser
 
-handleGetUsers :: Server ListUser
+handleGetUsers :: Maybe Text -> AppM [Person]
 handleGetUsers h = liftIO $ print h *> loadUsers
 
-handleGetUser :: Server ListUser'
+handleGetUser :: Session -> Maybe Text -> Text -> AppM Person
 handleGetUser Session{useInfra} _ uid = do
+  ctx <- ask
+  liftIO $ print ctx
   users <- useInfra (findMany' [uid])
   maybe (throwError err404) pure (Vec.headM users)
 
