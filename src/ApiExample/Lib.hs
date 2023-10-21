@@ -31,11 +31,13 @@ import System.Environment (getEnv)
 
 type HandlerM = ReaderT AppCtx Handler
 
-type UseInfra = forall param result. Hstmt.Statement param result -> param -> HandlerM result
+type RunDBIO = forall param result. Hstmt.Statement param result -> param -> HandlerM result
+
+type AppTx = forall a. ((forall param result. Hstmt.Statement param result -> param -> Tx.Transaction result) -> Tx.Transaction a) -> HandlerM a
 
 data AppCtx = AppCtx
-  { useInfra :: UseInfra
-  , tx :: forall a. ((forall param result. Hstmt.Statement param result -> param -> Tx.Transaction result) -> Tx.Transaction a) -> HandlerM a
+  { runDBIO :: RunDBIO
+  , tx :: AppTx
   }
 
 type ServerM api = ServerT api HandlerM
@@ -89,36 +91,41 @@ startApp :: IO ()
 startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
   pool <- getPool
-  let server =
-        hoistServerWithContext
-          api
-          authCtx
-          ( `runReaderT`
-              AppCtx
-                { useInfra = mkUserInfra pool
-                , tx = \t -> liftIO (use pool (defaultTx (t (flip Tx.statement)))) >>= either (const $ throwError err500) pure
-                }
-          )
-          serverM
-  run port $ serveWithContext api genAuthServerContext server
+  run port $ serveWithContext api genAuthServerContext (mkServer pool)
  where
   api = Proxy @API
   authCtx = Proxy @'[AppAuthHandler]
 
-  mkUserInfra :: Pool -> UseInfra
-  mkUserInfra pool stmt param = liftIO (use pool (HS.statement param stmt)) >>= either (const $ throwError err500) pure
+  mkServer :: Pool -> Server API
+  mkServer pool =
+    hoistServerWithContext
+      api
+      authCtx
+      (`runReaderT` AppCtx{runDBIO = mkRunnerOfDBIO pool, tx = mkTx pool})
+      serverM
+
+  mkRunnerOfDBIO :: Pool -> RunDBIO
+  mkRunnerOfDBIO pool stmt param = liftIO (use pool (HS.statement param stmt)) >>= either (const $ throwError err500) pure
+
+  mkTx :: Pool -> AppTx
+  mkTx pool mkQueryRunner = do
+    resultOfTx <-
+      let txQuery = mkQueryRunner $ flip Tx.statement
+          resultOfTx = use pool $ defaultTx txQuery
+       in liftIO resultOfTx
+    either (\e -> liftIO (print e) *> throwError err500) pure resultOfTx
 
 serverM :: ServerM API
 serverM = handleGetUsers :<|> handleGetUser
 
 handleGetUsers :: ServerM ListUser
 handleGetUsers _ = do
-  AppCtx{useInfra} <- ask
-  useInfra findAll ()
+  AppCtx{runDBIO} <- ask
+  runDBIO findAll ()
 
 handleGetUser :: ServerM ListUser'
 handleGetUser Session{userName} _ uid = do
-  AppCtx{useInfra} <- ask
+  AppCtx{runDBIO} <- ask
   liftIO $ print userName
-  users <- useInfra findMany' [uid]
+  users <- runDBIO findMany' [uid]
   maybe (throwError err404) pure (Vec.headM users)
