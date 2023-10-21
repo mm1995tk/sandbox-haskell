@@ -56,7 +56,9 @@ extractCookies req = M.fromList . parseCookies . decodeUtf8Lenient <$> lookup "c
 
 data Session = Session {userName :: Text}
 
-type instance AuthServerData (AuthProtect "cookie") = Session
+type CookieAuth = AuthProtect "cookie"
+
+type instance AuthServerData CookieAuth = Session
 genAuthServerContext :: Context (AuthHandler Request Session ': '[])
 genAuthServerContext = authHandler :. EmptyContext
 
@@ -80,7 +82,7 @@ type ListUser =
 
 type ListUser' =
   "users"
-    :> AuthProtect "cookie"
+    :> CookieAuth
     :> Header "user-agent" Text
     :> Capture "ppp" Text
     :> Get '[JSON] Person
