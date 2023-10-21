@@ -1,8 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE ImpredicativeTypes #-}
-{-# HLINT ignore "Use newtype instead of data" #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 module ApiExample.Lib (startApp) where
 
@@ -54,7 +51,7 @@ parseCookies cookieText =
 extractCookies :: Request -> Maybe (M.Map Text Text)
 extractCookies req = M.fromList . parseCookies . decodeUtf8Lenient <$> lookup "cookie" (requestHeaders req)
 
-data Session = Session {userName :: Text}
+data Session = Session {userName :: Text, email :: Text}
 
 type CookieAuth = AuthProtect "cookie"
 
@@ -71,7 +68,7 @@ authHandler = mkAuthHandler handler
     Just sessionId -> liftIO $ mkSession sessionId
     _ -> throwError err401
 
-  mkSession sessionId = print ("sessionId: " <> sessionId) $> Session{userName = "dummy"}
+  mkSession sessionId = print ("sessionId: " <> sessionId) $> Session{userName = "dummy", email = "dummy"}
 
 type API = ListUser :<|> ListUser'
 
