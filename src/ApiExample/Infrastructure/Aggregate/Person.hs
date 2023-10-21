@@ -5,7 +5,7 @@ module ApiExample.Infrastructure.Aggregate.Person where
 
 import ApiExample.Domain (Person (..))
 import Data.Int (Int32)
-import Data.Profunctor (lmap)
+import Data.Profunctor (Profunctor (dimap), lmap)
 import Data.Text (Text)
 import Data.Vector (Vector, fromList, snoc)
 import Hasql.Session
@@ -109,12 +109,12 @@ findMany =
     where age = $1 :: int4
   |]
 
-findMany' :: [Text] -> Session (Vector Person)
-findMany' xs =
-  statement (fromList xs)
-    $ fmap
-      (fmap \(personId, fullName, age) -> Person{age = fromIntegral age, ..})
-      [vectorStatement|
+findMany' :: Statement [Text] (Vector Person)
+findMany' =
+  dimap
+    fromList
+    (fmap \(personId, fullName, age) -> Person{age = fromIntegral age, ..})
+    [vectorStatement|
     select 
       person_id :: text
       ,full_name :: text
@@ -123,12 +123,10 @@ findMany' xs =
     where person_id = any($1 :: text[])
   |]
 
-findAll :: Session (Vector Person)
+findAll :: Statement () (Vector Person)
 findAll =
-  statement ()
-    $ fmap
-      (fmap \(personId, fullName, age) -> Person{age = fromIntegral age, ..})
-      [vectorStatement|
+  (fmap \(personId, fullName, age) -> Person{age = fromIntegral age, ..})
+    <$> [vectorStatement|
     select 
       person_id :: text
       ,full_name :: text

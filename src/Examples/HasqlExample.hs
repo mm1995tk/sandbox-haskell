@@ -55,8 +55,8 @@ multiInsert' =
       person (person_id, age, full_name) 
     select * from unnest($1 :: text[], $2 :: int4[], $3 :: text[] )
     |]
-  where
-    encode = lmap $ foldl (\(a, b, c) Person{..} -> (snoc a personId, snoc b age, snoc c fullName)) (mempty, mempty, mempty)
+ where
+  encode = lmap $ foldl (\(a, b, c) Person{..} -> (snoc a personId, snoc b age, snoc c fullName)) (mempty, mempty, mempty)
 
 multiInsert :: [Person] -> Session ()
 multiInsert = flip statement multiInsert' . fromList
@@ -75,8 +75,8 @@ multiUpdate ps =
     where
       person.person_id = newdata.person_id
     |]
-  where
-    encode = lmap $ foldl (\(a, b, c) Person{..} -> (snoc a personId, snoc b age, snoc c fullName)) (mempty, mempty, mempty)
+ where
+  encode = lmap $ foldl (\(a, b, c) Person{..} -> (snoc a personId, snoc b age, snoc c fullName)) (mempty, mempty, mempty)
 
 multiUpsert :: [Person] -> Session ()
 multiUpsert ps =
@@ -93,18 +93,18 @@ multiUpsert ps =
       age = excluded.age,
       full_name = excluded.full_name
     |]
-  where
-    encode = lmap $ foldl (\(a, b, c) Person{..} -> (snoc a personId, snoc b age, snoc c fullName)) (mempty, mempty, mempty)
+ where
+  encode = lmap $ foldl (\(a, b, c) Person{..} -> (snoc a personId, snoc b age, snoc c fullName)) (mempty, mempty, mempty)
 
 createPerson :: Person -> Session Text
 createPerson = flip statement insertProduct
-  where
-    encode = lmap \Person{..} -> (personId, age, fullName)
+ where
+  encode = lmap \Person{..} -> (personId, age, fullName)
 
-    insertProduct :: Statement Person Text
-    insertProduct =
-      encode
-        [singletonStatement|
+  insertProduct :: Statement Person Text
+  insertProduct =
+    encode
+      [singletonStatement|
         insert into 
           person (person_id, age, full_name) 
         values (

@@ -18,7 +18,9 @@ import Data.Text.Encoding (decodeUtf8Lenient)
 import Data.Vector qualified as Vec
 import Hasql.Pool (Pool, use)
 import Hasql.Session qualified as HS
-import MyLib.Support (getPool)
+import Hasql.Statement qualified as Hstmt
+import Hasql.Transaction qualified as Tx
+import MyLib.Support (defaultTx, getPool)
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
@@ -27,7 +29,9 @@ import System.Environment (getEnv)
 
 type HandlerM = ReaderT AppCtx Handler
 
-data AppCtx = AppCtx {useInfra :: UseInfra}
+type UseInfra = forall param result. Hstmt.Statement param result -> param -> HandlerM result
+
+data AppCtx = AppCtx {useInfra :: UseInfra, tx :: forall a. Tx.Transaction a -> HandlerM a}
 
 type ServerM api = ServerT api HandlerM
 
@@ -43,7 +47,6 @@ parseCookies cookieText =
 extractCookies :: Request -> Maybe (M.Map Text Text)
 extractCookies req = M.fromList . parseCookies . decodeUtf8Lenient <$> lookup "cookie" (requestHeaders req)
 
-type UseInfra = forall a. HS.Session a -> HandlerM a
 data Session = Session {userName :: Text}
 
 type instance AuthServerData (AuthProtect "cookie") = Session
@@ -81,14 +84,24 @@ startApp :: IO ()
 startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
   pool <- getPool
-  let server = hoistServerWithContext api authCtx (`runReaderT` AppCtx{useInfra = mkUserInfra pool}) serverM
+  let server =
+        hoistServerWithContext
+          api
+          authCtx
+          ( `runReaderT`
+              AppCtx
+                { useInfra = mkUserInfra pool
+                , tx = \t -> liftIO (use pool (defaultTx t)) >>= either (const $ throwError err500) pure
+                }
+          )
+          serverM
   run port $ serveWithContext api genAuthServerContext server
  where
   api = Proxy @API
   authCtx = Proxy @'[AppAuthHandler]
 
   mkUserInfra :: Pool -> UseInfra
-  mkUserInfra pool s = liftIO (use pool s) >>= either (const $ throwError err500) pure
+  mkUserInfra pool stmt param = liftIO (use pool (HS.statement param stmt)) >>= either (const $ throwError err500) pure
 
 serverM :: ServerM API
 serverM = handleGetUsers :<|> handleGetUser
@@ -96,11 +109,11 @@ serverM = handleGetUsers :<|> handleGetUser
 handleGetUsers :: ServerM ListUser
 handleGetUsers _ = do
   AppCtx{useInfra} <- ask
-  useInfra findAll
+  useInfra findAll ()
 
 handleGetUser :: ServerM ListUser'
 handleGetUser Session{userName} _ uid = do
   AppCtx{useInfra} <- ask
   liftIO $ print userName
-  users <- useInfra (findMany' [uid])
+  users <- useInfra findMany' [uid]
   maybe (throwError err404) pure (Vec.headM users)
