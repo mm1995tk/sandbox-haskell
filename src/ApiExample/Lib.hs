@@ -90,18 +90,22 @@ startApp :: IO ()
 startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
   pool <- getPool
-  run port $ serveWithContext api genAuthServerContext (mkServer pool)
+  let appCtx = mkAppCtx pool
+  run port . logMiddleware appCtx $ serveWithContext api genAuthServerContext (mkServer appCtx)
  where
   api = Proxy @API
   authCtx = Proxy @'[AppAuthHandler]
 
-  mkServer :: Pool -> Server API
-  mkServer pool =
+  mkServer :: AppCtx -> Server API
+  mkServer appCtx =
     hoistServerWithContext
       api
       authCtx
-      (`runReaderT` AppCtx{runDBIO = mkRunnerOfDBIO pool, tx = mkTx pool})
+      (`runReaderT` appCtx)
       serverM
+
+  mkAppCtx :: Pool -> AppCtx
+  mkAppCtx pool = AppCtx{runDBIO = mkRunnerOfDBIO pool, tx = mkTx pool}
 
   mkRunnerOfDBIO :: Pool -> RunDBIO
   mkRunnerOfDBIO pool stmt param = liftIO (use pool (HS.statement param stmt)) >>= either (const $ throwError err500) pure
@@ -128,3 +132,12 @@ handleGetUser Session{userName} _ uid = do
   liftIO $ print userName
   users <- runDBIO findMany' [uid]
   maybe (throwError err404) pure (Vec.headM users)
+
+logMiddleware :: AppCtx -> Middleware
+logMiddleware AppCtx{} app req res = do
+  putStrLn "hello"
+  print method
+  next <* putStrLn "bye"
+ where
+  next = app req res
+  method = requestMethod req
