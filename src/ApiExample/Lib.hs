@@ -1,6 +1,7 @@
+{-# HLINT ignore "Use newtype instead of data" #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
-{-# HLINT ignore "Use newtype instead of data" #-}
 module ApiExample.Lib (startApp) where
 
 import ApiExample.Domain (Person (..))
@@ -24,9 +25,11 @@ import Servant
 import Servant.Server.Experimental.Auth
 import System.Environment (getEnv)
 
-type AppM = ReaderT AppCtx Handler
+type HandlerM = ReaderT AppCtx Handler
 
 data AppCtx = AppCtx deriving (Show)
+
+type ServerM api = ServerT api HandlerM
 
 type Cookies = [(T.Text, T.Text)]
 
@@ -40,14 +43,16 @@ parseCookies cookieText =
 extractCookies :: Request -> Maybe (M.Map Text Text)
 extractCookies req = M.fromList . parseCookies . decodeUtf8Lenient <$> lookup "cookie" (requestHeaders req)
 
-type UseInfra = forall a. HS.Session a -> AppM a
+type UseInfra = forall a. HS.Session a -> HandlerM a
 data Session = Session {useInfra :: UseInfra}
 
 type instance AuthServerData (AuthProtect "cookie") = Session
 genAuthServerContext :: Pool -> Context (AuthHandler Request Session ': '[])
 genAuthServerContext p = authHandler p :. EmptyContext
 
-authHandler :: Pool -> AuthHandler Request Session
+type AppAuthHandler = AuthHandler Request Session
+
+authHandler :: Pool -> AppAuthHandler
 authHandler pool = mkAuthHandler handler
  where
   handler req = case M.lookup "session-id" =<< extractCookies req of
@@ -79,17 +84,24 @@ startApp :: IO ()
 startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
   ctx <- genAuthServerContext <$> getPool
-  run port $ serveWithContext api ctx serverM
+  run port $ serveWithContext api ctx server
  where
   api = Proxy @API
-  serverM = hoistServerWithContext api (Proxy :: Proxy '[AuthHandler Request Session]) (`runReaderT` AppCtx) server
+  authCtx = Proxy @'[AppAuthHandler]
 
-server = handleGetUsers :<|> handleGetUser
+  runHandlerM :: HandlerM a -> Handler a
+  runHandlerM handlerM = runReaderT handlerM AppCtx
 
-handleGetUsers :: Maybe Text -> AppM [Person]
+  server :: Server API
+  server = hoistServerWithContext api authCtx runHandlerM serverM
+
+serverM :: ServerM API
+serverM = handleGetUsers :<|> handleGetUser
+
+handleGetUsers :: ServerM ListUser
 handleGetUsers h = liftIO $ print h *> loadUsers
 
-handleGetUser :: Session -> Maybe Text -> Text -> AppM Person
+handleGetUser :: ServerM ListUser'
 handleGetUser Session{useInfra} _ uid = do
   ctx <- ask
   liftIO $ print ctx
