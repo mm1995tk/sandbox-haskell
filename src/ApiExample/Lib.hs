@@ -1,3 +1,5 @@
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE ImpredicativeTypes #-}
 {-# HLINT ignore "Use newtype instead of data" #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
@@ -31,7 +33,10 @@ type HandlerM = ReaderT AppCtx Handler
 
 type UseInfra = forall param result. Hstmt.Statement param result -> param -> HandlerM result
 
-data AppCtx = AppCtx {useInfra :: UseInfra, tx :: forall a. Tx.Transaction a -> HandlerM a}
+data AppCtx = AppCtx
+  { useInfra :: UseInfra
+  , tx :: forall a. ((forall param result. Hstmt.Statement param result -> param -> Tx.Transaction result) -> Tx.Transaction a) -> HandlerM a
+  }
 
 type ServerM api = ServerT api HandlerM
 
@@ -91,7 +96,7 @@ startApp = do
           ( `runReaderT`
               AppCtx
                 { useInfra = mkUserInfra pool
-                , tx = \t -> liftIO (use pool (defaultTx t)) >>= either (const $ throwError err500) pure
+                , tx = \t -> liftIO (use pool (defaultTx (t (flip Tx.statement)))) >>= either (const $ throwError err500) pure
                 }
           )
           serverM
