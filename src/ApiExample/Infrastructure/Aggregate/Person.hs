@@ -123,6 +123,20 @@ findMany' xs =
     where person_id = any($1 :: text[])
   |]
 
+findAll :: Session (Vector Person)
+findAll =
+  statement ()
+    $ fmap
+      (fmap \(personId, fullName, age) -> Person{age = fromIntegral age, ..})
+      [vectorStatement|
+    select 
+      person_id :: text
+      ,full_name :: text
+      , age :: int4 
+    from person 
+
+  |]
+
 deleteById :: [Text] -> Session ()
 deleteById ids =
   statement

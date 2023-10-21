@@ -5,7 +5,7 @@
 module ApiExample.Lib (startApp) where
 
 import ApiExample.Domain (Person (..))
-import ApiExample.Infrastructure.Aggregate.Person (findMany')
+import ApiExample.Infrastructure.Aggregate.Person (findAll, findMany')
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Reader (ReaderT (runReaderT), ask)
 import Data.Aeson
@@ -27,7 +27,7 @@ import System.Environment (getEnv)
 
 type HandlerM = ReaderT AppCtx Handler
 
-data AppCtx = AppCtx deriving (Show)
+data AppCtx = AppCtx {useInfra :: UseInfra}
 
 type ServerM api = ServerT api HandlerM
 
@@ -44,32 +44,29 @@ extractCookies :: Request -> Maybe (M.Map Text Text)
 extractCookies req = M.fromList . parseCookies . decodeUtf8Lenient <$> lookup "cookie" (requestHeaders req)
 
 type UseInfra = forall a. HS.Session a -> HandlerM a
-data Session = Session {useInfra :: UseInfra}
+data Session = Session {userName :: Text}
 
 type instance AuthServerData (AuthProtect "cookie") = Session
-genAuthServerContext :: Pool -> Context (AuthHandler Request Session ': '[])
-genAuthServerContext p = authHandler p :. EmptyContext
+genAuthServerContext :: Context (AuthHandler Request Session ': '[])
+genAuthServerContext = authHandler :. EmptyContext
 
 type AppAuthHandler = AuthHandler Request Session
 
-authHandler :: Pool -> AppAuthHandler
-authHandler pool = mkAuthHandler handler
+authHandler :: AppAuthHandler
+authHandler = mkAuthHandler handler
  where
   handler req = case M.lookup "session-id" =<< extractCookies req of
     Just sessionId -> liftIO $ mkSession sessionId
     _ -> throwError err401
 
-  mkSession sessionId = print ("sessionId: " <> sessionId) $> Session{useInfra}
-
-  useInfra :: UseInfra
-  useInfra s = liftIO (use pool s) >>= either (const $ throwError err500) pure
+  mkSession sessionId = print ("sessionId: " <> sessionId) $> Session{userName = "dummy"}
 
 type API = ListUser :<|> ListUser'
 
 type ListUser =
   "users"
     :> Header "user-agent" Text
-    :> Get '[JSON] [Person]
+    :> Get '[JSON] (Vec.Vector Person)
 
 type ListUser' =
   "users"
@@ -83,34 +80,27 @@ $(deriveJSON defaultOptions ''Person)
 startApp :: IO ()
 startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
-  ctx <- genAuthServerContext <$> getPool
-  run port $ serveWithContext api ctx server
+  pool <- getPool
+  let server = hoistServerWithContext api authCtx (`runReaderT` AppCtx{useInfra = mkUserInfra pool}) serverM
+  run port $ serveWithContext api genAuthServerContext server
  where
   api = Proxy @API
   authCtx = Proxy @'[AppAuthHandler]
 
-  runHandlerM :: HandlerM a -> Handler a
-  runHandlerM handlerM = runReaderT handlerM AppCtx
-
-  server :: Server API
-  server = hoistServerWithContext api authCtx runHandlerM serverM
+  mkUserInfra :: Pool -> UseInfra
+  mkUserInfra pool s = liftIO (use pool s) >>= either (const $ throwError err500) pure
 
 serverM :: ServerM API
 serverM = handleGetUsers :<|> handleGetUser
 
 handleGetUsers :: ServerM ListUser
-handleGetUsers h = liftIO $ print h *> loadUsers
+handleGetUsers _ = do
+  AppCtx{useInfra} <- ask
+  useInfra findAll
 
 handleGetUser :: ServerM ListUser'
-handleGetUser Session{useInfra} _ uid = do
-  ctx <- ask
-  liftIO $ print ctx
+handleGetUser Session{userName} _ uid = do
+  AppCtx{useInfra} <- ask
+  liftIO $ print userName
   users <- useInfra (findMany' [uid])
   maybe (throwError err404) pure (Vec.headM users)
-
-loadUsers :: IO [Person]
-loadUsers =
-  pure
-    [ Person{personId = "abcde", age = 20, fullName = "bash"}
-    , Person{personId = "fghjk", age = 28, fullName = "zsh"}
-    ]
