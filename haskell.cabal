@@ -83,6 +83,7 @@ library
     , servant-server
     , text
     , time
+    , ulid
     , validation-selective
     , vector
     , wai
@@ -132,6 +133,7 @@ executable haskell-exe
     , servant-server
     , text
     , time
+    , ulid
     , validation-selective
     , vector
     , wai
@@ -182,6 +184,7 @@ test-suite haskell-test
     , servant-server
     , text
     , time
+    , ulid
     , validation-selective
     , vector
     , wai

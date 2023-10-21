@@ -14,6 +14,8 @@ import Data.Map qualified as M
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8Lenient)
+import Data.Time.Clock.POSIX (POSIXTime, getPOSIXTime, posixSecondsToUTCTime)
+import Data.ULID (ULID, getULIDTime)
 import Data.Vector qualified as Vec
 import Hasql.Pool (Pool, use)
 import Hasql.Session qualified as HS
@@ -35,6 +37,8 @@ type AppTx = forall a. ((forall param result. Hstmt.Statement param result -> pa
 data AppCtx = AppCtx
   { runDBIO :: RunDBIO
   , tx :: AppTx
+  , accessId :: ULID
+  , reqAt :: POSIXTime
   }
 
 type ServerM api = ServerT api HandlerM
@@ -90,7 +94,10 @@ startApp :: IO ()
 startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
   pool <- getPool
-  let appCtx = mkAppCtx pool
+  reqAt <- getPOSIXTime
+  accessId <- getULIDTime reqAt
+
+  let appCtx = mkAppCtx reqAt accessId pool
   run port . logMiddleware appCtx $ serveWithContext api genAuthServerContext (mkServer appCtx)
  where
   api = Proxy @API
@@ -104,8 +111,8 @@ startApp = do
       (`runReaderT` appCtx)
       serverM
 
-  mkAppCtx :: Pool -> AppCtx
-  mkAppCtx pool = AppCtx{runDBIO = mkRunnerOfDBIO pool, tx = mkTx pool}
+  mkAppCtx :: POSIXTime -> ULID -> Pool -> AppCtx
+  mkAppCtx reqAt accessId pool = AppCtx{runDBIO = mkRunnerOfDBIO pool, tx = mkTx pool, accessId, reqAt}
 
   mkRunnerOfDBIO :: Pool -> RunDBIO
   mkRunnerOfDBIO pool stmt param = liftIO (use pool (HS.statement param stmt)) >>= either (const $ throwError err500) pure
@@ -134,7 +141,9 @@ handleGetUser Session{userName} _ uid = do
   maybe (throwError err404) pure (Vec.headM users)
 
 logMiddleware :: AppCtx -> Middleware
-logMiddleware AppCtx{} app req res = do
+logMiddleware AppCtx{reqAt, accessId} app req res = do
+  print $ posixSecondsToUTCTime reqAt
+  print accessId
   putStrLn "hello"
   print method
   next <* putStrLn "bye"
