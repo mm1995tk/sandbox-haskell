@@ -2,10 +2,9 @@
 
 module ApiExample.Endpoint (serverM, API) where
 
-import ApiExample.Endpoints.GetUser as GetUser
-
 import ApiExample.Domain (Person)
-import ApiExample.Endpoints.ListUsers as ListUsers
+import ApiExample.Endpoints.GetUser
+import ApiExample.Endpoints.ListUsers
 import ApiExample.Framework (ServerM)
 import Data.Aeson (defaultOptions)
 import Data.Aeson.TH (deriveJSON)
