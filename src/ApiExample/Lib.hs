@@ -3,21 +3,15 @@
 
 module ApiExample.Lib (startApp) where
 
-import ApiExample.Domain (Person (..))
 import ApiExample.Endpoint
 import ApiExample.Framework
-import ApiExample.Infrastructure.Aggregate.Person (findAll, findMany')
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Control.Monad.Reader (ReaderT (runReaderT), ask)
-import Data.Aeson
-import Data.Aeson.TH (deriveJSON)
+import Control.Monad.Reader (ReaderT (runReaderT))
 import Data.ByteString.Char8 (unpack)
 import Data.Functor (($>))
 import Data.Map qualified as M
-import Data.Text (Text)
 import Data.Time.Clock.POSIX (POSIXTime, getPOSIXTime, posixSecondsToUTCTime)
 import Data.ULID (ULID, getULIDTime)
-import Data.Vector qualified as Vec
 import Hasql.Pool (Pool, use)
 import Hasql.Session qualified as HS
 import Hasql.Transaction qualified as Tx
