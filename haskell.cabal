@@ -26,6 +26,12 @@ source-repository head
 library
   exposed-modules:
       ApiExample.Domain
+      ApiExample.Endpoint
+      ApiExample.Endpoints.GetUser
+      ApiExample.Endpoints.ListUsers
+      ApiExample.Framework
+      ApiExample.Framework.Security
+      ApiExample.Framework.Types
       ApiExample.Infrastructure
       ApiExample.Infrastructure.Aggregate.Person
       ApiExample.Infrastructure.Model
