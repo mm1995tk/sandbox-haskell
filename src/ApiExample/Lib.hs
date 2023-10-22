@@ -10,8 +10,8 @@ import Control.Monad.Reader (ReaderT (runReaderT))
 import Data.ByteString.Char8 (unpack)
 import Data.Functor (($>))
 import Data.Map qualified as M
-import Data.Time.Clock.POSIX (POSIXTime, getPOSIXTime, posixSecondsToUTCTime)
-import Data.ULID (ULID, getULIDTime)
+import Data.Time.Clock.POSIX (getPOSIXTime, posixSecondsToUTCTime)
+import Data.ULID (getULIDTime)
 import Hasql.Pool (Pool, use)
 import Hasql.Session qualified as HS
 import Hasql.Transaction qualified as Tx
