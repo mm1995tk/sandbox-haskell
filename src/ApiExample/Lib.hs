@@ -25,11 +25,7 @@ import System.Environment (getEnv)
 startApp :: IO ()
 startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
-  pool <- getPool
-  reqAt <- getPOSIXTime
-  accessId <- getULIDTime reqAt
-
-  let appCtx = mkAppCtx reqAt accessId pool
+  appCtx <- mkAppCtx
   run port . logMiddleware appCtx $ serveWithContext api (authHandler :. EmptyContext) (mkServer appCtx)
  where
   api = Proxy @API
@@ -43,11 +39,17 @@ startApp = do
       (`runReaderT` appCtx)
       serverM
 
-  mkAppCtx :: POSIXTime -> ULID -> Pool -> AppCtx
-  mkAppCtx reqAt accessId pool = AppCtx{runDBIO = mkRunnerOfDBIO pool, tx = mkTx pool, accessId, reqAt}
+  mkAppCtx :: IO AppCtx
+  mkAppCtx = do
+    pool <- getPool
+    reqAt <- getPOSIXTime
+    accessId <- getULIDTime reqAt
+    return AppCtx{runDBIO = mkRunnerOfDBIO pool, tx = mkTx pool, accessId, reqAt}
 
   mkRunnerOfDBIO :: Pool -> RunDBIO
-  mkRunnerOfDBIO pool stmt param = liftIO (use pool (HS.statement param stmt)) >>= either (const $ throwError err500) pure
+  mkRunnerOfDBIO pool stmt param = do
+    resultOfSQLQuery <- liftIO $ use pool (HS.statement param stmt)
+    either (const $ throwError err500) pure resultOfSQLQuery
 
   mkTx :: Pool -> AppTx
   mkTx pool mkQueryRunner = do
