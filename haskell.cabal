@@ -27,14 +27,15 @@ library
   exposed-modules:
       ApiExample.Domain
       ApiExample.Endpoint
-      ApiExample.Endpoints.GetUser
-      ApiExample.Endpoints.ListUsers
+      ApiExample.Endpoint.GetUser
+      ApiExample.Endpoint.ListUsers
       ApiExample.Framework
+      ApiExample.Framework.AppContext
       ApiExample.Framework.Security
       ApiExample.Framework.Types
       ApiExample.Infrastructure
       ApiExample.Infrastructure.Aggregate.Person
-      ApiExample.Lib
+      ApiExample.Server
       Examples.AsyncExample
       Examples.ConduitExample
       Examples.DomainCopied

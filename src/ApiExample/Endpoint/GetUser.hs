@@ -1,4 +1,4 @@
-module ApiExample.Endpoints.GetUser where
+module ApiExample.Endpoint.GetUser where
 
 import ApiExample.Domain (Person)
 import ApiExample.Framework (AppCtx (..), CookieAuth, ServerM, Session (..))

@@ -1,7 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module ApiExample.Lib (startApp) where
+module ApiExample.Server (startApp) where
 
 import ApiExample.Endpoint
 import ApiExample.Framework
@@ -10,12 +10,7 @@ import Control.Monad.Reader (ReaderT (runReaderT))
 import Data.ByteString.Char8 (unpack)
 import Data.Functor (($>))
 import Data.Map qualified as M
-import Data.Time.Clock.POSIX (getPOSIXTime, posixSecondsToUTCTime)
-import Data.ULID (getULIDTime)
-import Hasql.Pool (Pool, use)
-import Hasql.Session qualified as HS
-import Hasql.Transaction qualified as Tx
-import MyLib.Support (defaultTx, getPool)
+import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
@@ -38,26 +33,6 @@ startApp = do
       authCtx
       (`runReaderT` appCtx)
       serverM
-
-  mkAppCtx :: IO AppCtx
-  mkAppCtx = do
-    pool <- getPool
-    reqAt <- getPOSIXTime
-    accessId <- getULIDTime reqAt
-    return AppCtx{runDBIO = mkRunnerOfDBIO pool, tx = mkTx pool, accessId, reqAt}
-
-  mkRunnerOfDBIO :: Pool -> RunDBIO
-  mkRunnerOfDBIO pool stmt param = do
-    resultOfSQLQuery <- liftIO $ use pool (HS.statement param stmt)
-    either (const $ throwError err500) pure resultOfSQLQuery
-
-  mkTx :: Pool -> AppTx
-  mkTx pool mkQueryRunner = do
-    resultOfTx <-
-      let txQuery = mkQueryRunner $ flip Tx.statement
-          resultOfTx = use pool $ defaultTx txQuery
-       in liftIO resultOfTx
-    either (\e -> liftIO (print e) *> throwError err500) pure resultOfTx
 
 authHandler :: AppAuthHandler
 authHandler = mkAuthHandler handler

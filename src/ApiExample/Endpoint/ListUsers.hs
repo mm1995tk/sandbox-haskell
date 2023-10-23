@@ -1,4 +1,4 @@
-module ApiExample.Endpoints.ListUsers where
+module ApiExample.Endpoint.ListUsers where
 
 import ApiExample.Domain (Person)
 import ApiExample.Framework (AppCtx (..), ServerM)
