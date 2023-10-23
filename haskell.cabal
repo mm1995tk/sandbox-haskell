@@ -34,7 +34,6 @@ library
       ApiExample.Framework.Types
       ApiExample.Infrastructure
       ApiExample.Infrastructure.Aggregate.Person
-      ApiExample.Infrastructure.Model
       ApiExample.Lib
       Examples.AsyncExample
       Examples.ConduitExample

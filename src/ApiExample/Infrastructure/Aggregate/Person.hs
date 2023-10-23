@@ -4,18 +4,15 @@
 module ApiExample.Infrastructure.Aggregate.Person where
 
 import ApiExample.Domain (Person (..))
-import Data.Int (Int32)
-import Data.Profunctor (Profunctor (dimap), lmap)
+import Data.Profunctor (Profunctor (dimap), lmap, rmap)
 import Data.Text (Text)
 import Data.Vector (Vector, fromList, snoc)
-import Hasql.Session
 import Hasql.Statement (Statement (..))
-import Hasql.TH (maybeStatement, resultlessStatement, singletonStatement, vectorStatement)
-import Hasql.Transaction qualified as Tx
+import Hasql.TH (maybeStatement, resultlessStatement, vectorStatement)
 import MyLib.Utils ()
 
-multiInsert' :: Statement (Vector Person) ()
-multiInsert' =
+multiInsert :: Statement (Vector Person) ()
+multiInsert =
   encode
     [resultlessStatement|
     insert into 
@@ -25,15 +22,10 @@ multiInsert' =
  where
   encode = lmap $ foldl (\(a, b, c) Person{..} -> (snoc a personId, snoc b (fromIntegral age), snoc c fullName)) (mempty, mempty, mempty)
 
-multiInsert :: [Person] -> Session ()
-multiInsert = flip statement multiInsert' . fromList
-
-multiUpdate :: [Person] -> Session ()
-multiUpdate ps =
-  statement
-    (fromList ps)
-    $ encode
-      [resultlessStatement|
+multiUpdate :: Statement [Person] ()
+multiUpdate =
+  encode
+    [resultlessStatement|
     update person set 
       person_id = newdata.person_id,
       age = newdata.age,
@@ -45,12 +37,10 @@ multiUpdate ps =
  where
   encode = lmap $ foldl (\(a, b, c) Person{..} -> (snoc a personId, snoc b (fromIntegral age), snoc c fullName)) (mempty, mempty, mempty)
 
-multiUpsert :: [Person] -> Session ()
-multiUpsert ps =
-  statement
-    (fromList ps)
-    $ encode
-      [resultlessStatement|
+multiUpsert :: Statement [Person] ()
+multiUpsert =
+  encode
+    [resultlessStatement|
     insert into 
       person (person_id, age, full_name) 
     select * from unnest($1 :: text[], $2 :: int4[], $3 :: text[] )
@@ -63,30 +53,11 @@ multiUpsert ps =
  where
   encode = lmap $ foldl (\(a, b, c) Person{..} -> (snoc a personId, snoc b (fromIntegral age), snoc c fullName)) (mempty, mempty, mempty)
 
-createPerson :: Person -> Session Text
-createPerson = flip statement insertProduct
- where
-  encode = lmap \Person{..} -> (personId, fromIntegral age, fullName)
-
-  insertProduct :: Statement Person Text
-  insertProduct =
-    encode
-      [singletonStatement|
-        insert into 
-          person (person_id, age, full_name) 
-        values (
-          $1 :: text
-          , $2 :: int4
-          , $3 :: text) 
-        returning person_id :: text
-      |]
-
-findOne :: Text -> Session (Maybe Person)
+findOne :: Statement Text (Maybe Person)
 findOne =
-  flip statement
-    $ fmap
-      (fmap \(personId, fullName, age) -> Person{age = fromIntegral age, ..})
-      [maybeStatement|
+  rmap
+    (fmap \(personId, fullName, age) -> Person{age = fromIntegral age, ..})
+    [maybeStatement|
     select 
       person_id :: text
       ,full_name :: text
@@ -95,22 +66,8 @@ findOne =
     where person_id = $1 :: text
   |]
 
-findMany :: Int32 -> Session (Vector Person)
+findMany :: Statement [Text] (Vector Person)
 findMany =
-  flip statement
-    $ fmap
-      (fmap \(personId, fullName, age) -> Person{age = fromIntegral age, ..})
-      [vectorStatement|
-    select 
-      person_id :: text
-      ,full_name :: text
-      , age :: int4 
-    from person 
-    where age = $1 :: int4
-  |]
-
-findMany' :: Statement [Text] (Vector Person)
-findMany' =
   dimap
     fromList
     (fmap \(personId, fullName, age) -> Person{age = fromIntegral age, ..})
@@ -135,21 +92,10 @@ findAll =
 
   |]
 
-deleteById :: [Text] -> Session ()
-deleteById ids =
-  statement
-    (fromList ids)
+deleteById :: Statement [Text] ()
+deleteById =
+  lmap
+    fromList
     [resultlessStatement|
     delete from person where person_id = any($1::text[])
   |]
-
-sampleTx :: Tx.Transaction ()
-sampleTx = do
-  Tx.statement (fromList [Person{fullName = "hgyuf", age = 45, personId = "jdfdfdui"}]) multiInsert'
-  Tx.statement
-    ( fromList
-        [ Person{fullName = "dfghj", age = 29, personId = "poeiyf"}
-        , Person{fullName = "fdfdfuuu", age = 65, personId = "gfydee"}
-        ]
-    )
-    multiInsert'
