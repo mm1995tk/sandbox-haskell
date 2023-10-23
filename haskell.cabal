@@ -90,6 +90,7 @@ library
     , text
     , time
     , ulid
+    , unix
     , validation-selective
     , vector
     , wai
@@ -140,6 +141,7 @@ executable haskell-exe
     , text
     , time
     , ulid
+    , unix
     , validation-selective
     , vector
     , wai
@@ -191,6 +193,7 @@ test-suite haskell-test
     , text
     , time
     , ulid
+    , unix
     , validation-selective
     , vector
     , wai
