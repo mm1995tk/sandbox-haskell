@@ -27,6 +27,7 @@ library
   exposed-modules:
       ApiExample.Domain
       ApiExample.Endpoint
+      ApiExample.Endpoint.CreateUser
       ApiExample.Endpoint.GetUser
       ApiExample.Endpoint.ListUsers
       ApiExample.Framework

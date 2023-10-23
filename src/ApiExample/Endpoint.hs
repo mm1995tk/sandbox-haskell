@@ -3,6 +3,7 @@
 module ApiExample.Endpoint (serverM, API) where
 
 import ApiExample.Domain (Person)
+import ApiExample.Endpoint.CreateUser
 import ApiExample.Endpoint.GetUser
 import ApiExample.Endpoint.ListUsers
 import ApiExample.Framework (ServerM)
@@ -12,7 +13,7 @@ import Servant ((:<|>) ((:<|>)))
 
 $(deriveJSON defaultOptions ''Person)
 
-type API = ListUser :<|> GetUser
+type API = ListUser :<|> GetUser :<|> CreateUser
 
 serverM :: ServerM API
-serverM = handleGetUsers :<|> handleGetUser
+serverM = handleGetUsers :<|> handleGetUser :<|> handleCreateUser

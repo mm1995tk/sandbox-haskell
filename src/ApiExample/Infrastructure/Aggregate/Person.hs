@@ -11,7 +11,7 @@ import Hasql.Statement (Statement (..))
 import Hasql.TH (maybeStatement, resultlessStatement, vectorStatement)
 import MyLib.Utils ()
 
-multiInsert :: Statement (Vector Person) ()
+multiInsert :: Statement ([Person]) ()
 multiInsert =
   encode
     [resultlessStatement|
