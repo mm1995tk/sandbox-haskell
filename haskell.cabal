@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      ApiExample.DeriveJson
       ApiExample.Domain
       ApiExample.Endpoint
       ApiExample.Endpoint.CreateUser
@@ -36,6 +37,7 @@ library
       ApiExample.Framework.Types
       ApiExample.Infrastructure
       ApiExample.Infrastructure.Aggregate.Person
+      ApiExample.Schema
       ApiExample.Server
       Examples.AsyncExample
       Examples.ConduitExample
