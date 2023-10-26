@@ -9,14 +9,14 @@ import ApiExample.Infrastructure (findMany)
 import Control.Monad.Error.Class (throwError)
 import Data.Text (Text)
 import Data.Vector qualified as Vec
-import Servant (Capture, Get, Header, JSON, (:>))
+import Servant (Capture, Get, Header, JSON, ServerError (errBody), (:>))
 import Servant.Server (err404)
 
 type GetUser =
   "users"
     :> CookieAuth
     :> Header "user-agent" Text
-    :> Capture "ppp" Text
+    :> Capture "user-id" Text
     :> Get '[JSON] Person
 
 handleGetUser :: ServerM GetUser
@@ -24,4 +24,4 @@ handleGetUser Session{userName} _ uid = do
   AppCtx{runDBIO} <- ask
   liftIO $ print userName
   users <- runDBIO findMany [uid]
-  maybe (throwError err404) pure (Vec.headM users)
+  if Vec.null users then throwError err404{errBody = "the user you specified is not found"} else return (Vec.head users)

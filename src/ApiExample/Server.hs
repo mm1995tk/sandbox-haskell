@@ -7,9 +7,11 @@ import ApiExample.Endpoint
 import ApiExample.Framework
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Reader (ReaderT (runReaderT))
-import Data.ByteString.Char8 (unpack)
+import Data.Aeson
+import Data.ByteString.Char8 ( unpack)
 import Data.Functor (($>))
 import Data.Map qualified as M
+import Data.Text.Encoding (decodeUtf8Lenient)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Network.Wai
 import Network.Wai.Handler.Warp
@@ -21,10 +23,11 @@ startApp :: IO ()
 startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
   appCtx <- mkAppCtx
-  run port . logMiddleware appCtx $ serveWithContext api (authHandler :. EmptyContext) (mkServer appCtx)
+  run port . logMiddleware appCtx $ serveWithContext api contexts (mkServer appCtx)
  where
   api = Proxy @API
   authCtx = Proxy @'[AppAuthHandler]
+  contexts = customFormatters :. authHandler :. EmptyContext
 
   mkServer :: AppCtx -> Server API
   mkServer appCtx =
@@ -45,11 +48,36 @@ authHandler = mkAuthHandler handler
 
 logMiddleware :: AppCtx -> Middleware
 logMiddleware AppCtx{reqAt, accessId} app req res = do
-  putStrLn "hello"
-  print $ posixSecondsToUTCTime reqAt
+  putStrLn $ "[Accessed at]: " <> show (posixSecondsToUTCTime reqAt)
   print accessId
   putStrLn (unpack method)
-  next <* putStrLn "bye"
+  next <* putStrLn "bye" <* putStrLn ""
  where
   next = app req res
   method = requestMethod req
+
+customFormatters :: ErrorFormatters
+customFormatters =
+  defaultErrorFormatters
+    { bodyParserErrorFormatter = customFormatter
+    , notFoundErrorFormatter = notFoundFormatter
+    }
+
+customFormatter :: ErrorFormatter
+customFormatter tr _ err =
+  err400
+    { errBody = encode $ object ["combinator" .= show tr, "error" .= err]
+    , errHeaders = [("Content-Type", "application/json")]
+    }
+
+notFoundFormatter :: NotFoundErrorFormatter
+notFoundFormatter req =
+  err404
+    { errBody =
+        encode
+          $ object
+            [ "message"
+                .= ( "Not found path: " <> decodeUtf8Lenient (rawPathInfo req)
+                   )
+            ]
+    }
