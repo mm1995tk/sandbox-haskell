@@ -9,11 +9,13 @@ import ApiExample.Endpoint.ListUsers
 import ApiExample.Framework (ServerM)
 import Data.Aeson (defaultOptions)
 import Data.Aeson.TH (deriveJSON)
-import Servant ((:<|>) ((:<|>)))
+import Data.Text (Text)
+import Servant (Header, (:<|>) ((:<|>)), (:>))
 
 $(deriveJSON defaultOptions ''Person)
 
-type API = ListUser :<|> GetUser :<|> CreateUser
+type API = Header "x-custom-accessId" Text :> (ListUser :<|> GetUser :<|> CreateUser)
 
 serverM :: ServerM API
-serverM = handleGetUsers :<|> handleGetUser :<|> handleCreateUser
+serverM (Just accessId) = handleGetUsers accessId :<|> handleGetUser :<|> handleCreateUser
+serverM Nothing = error ""

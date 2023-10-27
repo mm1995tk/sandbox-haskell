@@ -5,14 +5,17 @@ module ApiExample.Server (startApp) where
 
 import ApiExample.Endpoint
 import ApiExample.Framework
+import ApiExample.Framework.ReqScopeCtx (ReqScopeCtx (ReqScopeCtx), dropReqScopeCtx, writeReqScopeCtx)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Reader (ReaderT (runReaderT))
 import Data.Aeson
-import Data.ByteString.Char8 ( unpack)
+import Data.ByteString.Char8 (unpack)
 import Data.Functor (($>))
 import Data.Map qualified as M
-import Data.Text.Encoding (decodeUtf8Lenient)
-import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
+import Data.Text (pack)
+import Data.Text.Encoding (decodeUtf8Lenient, encodeUtf8)
+import Data.Time.Clock.POSIX (getPOSIXTime, posixSecondsToUTCTime)
+import Data.ULID (getULIDTime)
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
@@ -23,7 +26,7 @@ startApp :: IO ()
 startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
   appCtx <- mkAppCtx
-  run port . logMiddleware appCtx $ serveWithContext api contexts (mkServer appCtx)
+  run port . setUpGlobalStore . logMiddleware appCtx $ serveWithContext api contexts (mkServer appCtx)
  where
   api = Proxy @API
   authCtx = Proxy @'[AppAuthHandler]
@@ -46,12 +49,26 @@ authHandler = mkAuthHandler handler
 
   mkSession sessionId = print ("sessionId: " <> sessionId) $> Session{userName = "dummy", email = "dummy"}
 
+setUpGlobalStore :: Middleware
+setUpGlobalStore app req res = do
+  reqAt <- getPOSIXTime
+  accessId <- getULIDTime reqAt
+  let k = pack . show $ accessId
+  writeReqScopeCtx (k, ReqScopeCtx accessId reqAt)
+  next k <* dropReqScopeCtx k
+ where
+  next k = app req{requestHeaders = ("x-custom-accessId", encodeUtf8 k) : requestHeaders req} res
+
 logMiddleware :: AppCtx -> Middleware
-logMiddleware AppCtx{reqAt, accessId} app req res = do
+logMiddleware _ app req res = do
+  reqAt <- getPOSIXTime
+  accessId <- getULIDTime reqAt
   putStrLn $ "[Accessed at]: " <> show (posixSecondsToUTCTime reqAt)
   print accessId
   putStrLn (unpack method)
-  next <* putStrLn "bye" <* putStrLn ""
+  next
+    <* putStrLn "bye"
+    <* putStrLn ""
  where
   next = app req res
   method = requestMethod req
