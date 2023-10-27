@@ -2,7 +2,7 @@ module ApiExample.Endpoint.CreateUser where
 
 import ApiExample.Domain (Person (..))
 import ApiExample.Framework (AppCtx (..), CookieAuth, ServerM)
-import ApiExample.Infrastructure (findMany, multiInsert)
+import ApiExample.Infrastructure
 import ApiExample.Schema (FullName (FullName), PersonRequest (..))
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Reader (MonadReader (..), ask)
@@ -22,12 +22,12 @@ handleCreateUser :: ServerM CreateUser
 handleCreateUser _ PersonRequest{..} = do
   AppCtx{tx} <- ask
   ulid <- T.pack . show <$> liftIO getULID
-  maybeUser <- tx $ \exec -> do
-    users <- exec findMany [ulid]
+  maybeUser <- tx $ do
+    users <- findMany' [ulid]
     case Vec.find (\Person{personId = x} -> x == ulid) users of
       Just _ -> return Nothing
       Nothing -> do
         let user = Person{personId = ulid, fullName = coerce fullName, age}
-        exec multiInsert [user]
+        insertUser user
         return $ Just user
   maybe (throwError err404) return maybeUser

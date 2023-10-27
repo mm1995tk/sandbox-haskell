@@ -26,14 +26,14 @@ handleGetUsers :: ServerM ListUser
 handleGetUsers _ Nothing = do
   liftIO $ print "none"
   AppCtx{runDBIO} <- ask
-  runDBIO findAll ()
+  runDBIO findAll
 handleGetUsers _ (Just Asc) = do
   liftIO $ print "asc"
 
   AppCtx{runDBIO} <- ask
-  runDBIO findAll ()
+  runDBIO findAll
 handleGetUsers _ (Just Desc) = do
   liftIO $ print "desc"
 
   AppCtx{runDBIO} <- ask
-  runDBIO findAll ()
+  runDBIO findAll

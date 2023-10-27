@@ -1,4 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE ImpredicativeTypes #-}
+{-# LANGUAGE LiberalTypeSynonyms #-}
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 
 module ApiExample.Infrastructure.Aggregate.Person where
@@ -7,11 +9,16 @@ import ApiExample.Domain (Person (..))
 import Data.Profunctor (Profunctor (dimap), lmap, rmap)
 import Data.Text (Text)
 import Data.Vector (Vector, fromList, snoc)
+import Hasql.Session qualified as HS
 import Hasql.Statement (Statement (..))
 import Hasql.TH (maybeStatement, resultlessStatement, vectorStatement)
+import Hasql.Transaction qualified as Htx
 import MyLib.Utils ()
 
-multiInsert :: Statement ([Person]) ()
+insertUser :: Person -> Htx.Transaction ()
+insertUser p = Htx.statement (pure p) multiInsert
+
+multiInsert :: Statement [Person] ()
 multiInsert =
   encode
     [resultlessStatement|
@@ -66,6 +73,12 @@ findOne =
     where person_id = $1 :: text
   |]
 
+findMany' :: [Text] -> Htx.Transaction (Vector Person)
+findMany' uid = Htx.statement (uid) findMany
+
+findMany'' :: [Text] -> HS.Session (Vector Person)
+findMany'' uid = HS.statement (uid) findMany
+
 findMany :: Statement [Text] (Vector Person)
 findMany =
   dimap
@@ -80,9 +93,10 @@ findMany =
     where person_id = any($1 :: text[])
   |]
 
-findAll :: Statement () (Vector Person)
+findAll :: HS.Session (Vector Person)
 findAll =
-  (fmap \(personId, fullName, age) -> Person{age = fromIntegral age, ..})
+  HS.statement ()
+    $ (fmap \(personId, fullName, age) -> Person{age = fromIntegral age, ..})
     <$> [vectorStatement|
     select 
       person_id :: text
