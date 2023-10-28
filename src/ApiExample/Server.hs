@@ -7,10 +7,10 @@ import ApiExample.Framework
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Reader (ReaderT (runReaderT))
 import Data.Aeson
-import Data.ByteString.Char8 (unpack)
+import Data.ByteString.Char8 qualified as BS
 import Data.Functor (($>))
 import Data.Map qualified as M
-import Data.Text (pack)
+import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8Lenient, encodeUtf8)
 import Data.Time.Clock.POSIX (getPOSIXTime, posixSecondsToUTCTime)
 import Data.ULID (getULIDTime)
@@ -54,7 +54,7 @@ setUpGlobalStore vkey app req res = do
   reqAt <- getPOSIXTime
   accessId <- getULIDTime reqAt
   let cur = vault req
-  let k = pack . show $ accessId
+  let k = T.pack . show $ accessId
   let vault' = Vault.insert vkey (ReqScopeCtx accessId reqAt) cur
   next k vault'
  where
@@ -63,9 +63,14 @@ setUpGlobalStore vkey app req res = do
 logMiddleware :: AppCtx -> Middleware
 logMiddleware AppCtx{reqScopeCtx} app req res = do
   let ReqScopeCtx{..} = reqScopeCtx $ vault req
-  putStrLn $ "[Accessed at]: " <> show (posixSecondsToUTCTime reqAt)
-  print accessId
-  putStrLn (unpack method)
+  BS.putStrLn
+    $ "[Accessed at]:"
+    <> BS.pack (show (posixSecondsToUTCTime reqAt))
+    <> " "
+    <> method
+    <> ": "
+    <> rawPathInfo req
+
   next
     <* putStrLn "bye"
     <* putStrLn ""
