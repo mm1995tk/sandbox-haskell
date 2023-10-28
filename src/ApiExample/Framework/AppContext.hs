@@ -1,6 +1,5 @@
 module ApiExample.Framework.AppContext (mkAppCtx) where
 
-import ApiExample.Framework.ReqScopeCtx (ReqScopeCtx)
 import ApiExample.Framework.Types
 import Control.Monad.Trans (liftIO)
 import Data.Maybe (fromMaybe)

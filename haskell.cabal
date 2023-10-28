@@ -32,7 +32,6 @@ library
       ApiExample.Endpoint.ListUsers
       ApiExample.Framework
       ApiExample.Framework.AppContext
-      ApiExample.Framework.ReqScopeCtx
       ApiExample.Framework.Security
       ApiExample.Framework.Types
       ApiExample.Infrastructure

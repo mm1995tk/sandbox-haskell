@@ -4,7 +4,6 @@ module ApiExample.Server (startApp) where
 
 import ApiExample.Endpoint
 import ApiExample.Framework
-import ApiExample.Framework.ReqScopeCtx (ReqScopeCtx (ReqScopeCtx), newVaultKey)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Reader (ReaderT (runReaderT))
 import Data.Aeson
@@ -25,7 +24,7 @@ import System.Environment (getEnv)
 startApp :: IO ()
 startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
-  vaultKey <- newVaultKey
+  vaultKey <- Vault.newKey
   appCtx <- mkAppCtx vaultKey
   run port . setUpGlobalStore vaultKey . logMiddleware appCtx $ serveWithContext api contexts (mkServer appCtx)
  where
