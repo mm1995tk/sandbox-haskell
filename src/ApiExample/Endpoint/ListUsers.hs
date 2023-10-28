@@ -1,7 +1,7 @@
 module ApiExample.Endpoint.ListUsers where
 
 import ApiExample.Domain (Person)
-import ApiExample.Framework (AppCtx (..), ServerM, ReqScopeCtx (ReqScopeCtx, loggers), Loggers (Loggers, info))
+import ApiExample.Framework (AppCtx (..), Loggers (Loggers, info), ReqScopeCtx (ReqScopeCtx, loggers), ServerM)
 import ApiExample.Infrastructure (findAll)
 import Control.Monad.Reader (MonadReader (..), ask)
 import Control.Monad.Trans (liftIO)

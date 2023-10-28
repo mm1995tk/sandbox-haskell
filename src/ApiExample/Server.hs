@@ -7,12 +7,11 @@ import ApiExample.Framework
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Reader (ReaderT (runReaderT))
 import Data.Aeson
-import Data.ByteString.Char8 qualified as BS
 import Data.Functor (($>))
 import Data.Map qualified as M
 import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8Lenient, encodeUtf8)
-import Data.Time.Clock.POSIX (getPOSIXTime, posixSecondsToUTCTime)
+import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.ULID (getULIDTime)
 import Data.Vault.Lazy qualified as Vault
 import Network.Wai
@@ -55,7 +54,7 @@ setUpGlobalStore vkey app req res = do
   accessId <- getULIDTime reqAt
   let cur = vault req
   let k = T.pack . show $ accessId
-  let logging :: (LogLevel -> Logger) = mkLogger accessId reqAt
+  let logging :: (LogLevel -> Logger) = mkLogger accessId reqAt req
 
   let vault' =
         Vault.insert
