@@ -39,6 +39,7 @@ dependencies:
   - servant-server
   - wai
   - warp
+  - vault
   - ulid
 
   # validated applicative functor

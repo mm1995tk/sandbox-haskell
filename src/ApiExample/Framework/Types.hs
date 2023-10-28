@@ -1,9 +1,11 @@
 module ApiExample.Framework.Types where
 
+import ApiExample.Framework.ReqScopeCtx
 import Control.Monad.Reader (ReaderT)
 import Data.Text
 import Data.Time.Clock.POSIX (POSIXTime)
 import Data.ULID (ULID)
+import Data.Vault.Lazy qualified as Vault
 import Hasql.Session qualified as HSession
 import Hasql.Transaction qualified as Tx
 import Network.Wai (Request)
@@ -22,6 +24,7 @@ data AppCtx = AppCtx
   , tx :: AppTx
   , accessId :: ULID
   , reqAt :: POSIXTime
+  , vaultKey :: Vault.Key ReqScopeCtx
   }
 
 type ServerM api = ServerT api HandlerM

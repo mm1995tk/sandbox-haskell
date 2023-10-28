@@ -95,6 +95,7 @@ library
     , ulid
     , unix
     , validation-selective
+    , vault
     , vector
     , wai
     , warp
@@ -146,6 +147,7 @@ executable haskell-exe
     , ulid
     , unix
     , validation-selective
+    , vault
     , vector
     , wai
     , warp
@@ -198,6 +200,7 @@ test-suite haskell-test
     , ulid
     , unix
     , validation-selective
+    , vault
     , vector
     , wai
     , warp

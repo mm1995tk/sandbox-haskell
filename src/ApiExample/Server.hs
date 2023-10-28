@@ -5,7 +5,7 @@ module ApiExample.Server (startApp) where
 
 import ApiExample.Endpoint
 import ApiExample.Framework
-import ApiExample.Framework.ReqScopeCtx (ReqScopeCtx (ReqScopeCtx), dropReqScopeCtx, writeReqScopeCtx)
+import ApiExample.Framework.ReqScopeCtx (ReqScopeCtx (ReqScopeCtx), newVaultKey)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Reader (ReaderT (runReaderT))
 import Data.Aeson
@@ -16,6 +16,7 @@ import Data.Text (pack)
 import Data.Text.Encoding (decodeUtf8Lenient, encodeUtf8)
 import Data.Time.Clock.POSIX (getPOSIXTime, posixSecondsToUTCTime)
 import Data.ULID (getULIDTime)
+import Data.Vault.Lazy qualified as Vault
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
@@ -25,8 +26,9 @@ import System.Environment (getEnv)
 startApp :: IO ()
 startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
-  appCtx <- mkAppCtx
-  run port . setUpGlobalStore . logMiddleware appCtx $ serveWithContext api contexts (mkServer appCtx)
+  vaultKey <- newVaultKey
+  appCtx <- mkAppCtx vaultKey
+  run port . setUpGlobalStore vaultKey . logMiddleware appCtx $ serveWithContext api contexts (mkServer appCtx)
  where
   api = Proxy @API
   authCtx = Proxy @'[AppAuthHandler]
@@ -49,15 +51,16 @@ authHandler = mkAuthHandler handler
 
   mkSession sessionId = print ("sessionId: " <> sessionId) $> Session{userName = "dummy", email = "dummy"}
 
-setUpGlobalStore :: Middleware
-setUpGlobalStore app req res = do
+setUpGlobalStore :: Vault.Key ReqScopeCtx -> Middleware
+setUpGlobalStore vkey app req res = do
   reqAt <- getPOSIXTime
   accessId <- getULIDTime reqAt
+  let cur = vault req
   let k = pack . show $ accessId
-  writeReqScopeCtx (k, ReqScopeCtx accessId reqAt)
-  next k <* dropReqScopeCtx k
+  let vault' = Vault.insert vkey (ReqScopeCtx accessId reqAt) cur
+  next k vault' 
  where
-  next k = app req{requestHeaders = ("x-custom-accessId", encodeUtf8 k) : requestHeaders req} res
+  next k vault' = app req{requestHeaders = ("x-custom-accessId", encodeUtf8 k) : requestHeaders req, vault = vault'} res
 
 logMiddleware :: AppCtx -> Middleware
 logMiddleware _ app req res = do
