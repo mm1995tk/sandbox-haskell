@@ -21,7 +21,7 @@ handleGetUsers :: ServerM ListUser
 handleGetUsers v _ Nothing = do
   AppCtx{reqScopeCtx} <- ask
   let ReqScopeCtx{loggers = Loggers{info}} = reqScopeCtx v
-  liftIO $ info @Text "none"
+  liftIO $ info @Text  (Just [("custom", "xxx"), ("accessId", "xxx")]) "none"
 
   liftIO $ threadDelaySec 3
   AppCtx{runDBIO} <- ask

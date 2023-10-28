@@ -2,40 +2,30 @@ module ApiExample.Framework.Logger where
 
 import ApiExample.Framework.Types
 import Data.Aeson
-import Data.Aeson.KeyMap (KeyMap, insert)
-import Data.Bifunctor (bimap)
+import Data.Aeson.KeyMap (fromList)
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Text.Encoding (decodeUtf8Lenient)
 import Data.Time.Clock.POSIX (POSIXTime, posixSecondsToUTCTime)
 import Data.ULID (ULID)
-import Network.Wai (Request (queryString, rawPathInfo, rawQueryString, remoteHost, requestHeaderHost, requestMethod))
+import Network.Wai (Request (queryString, rawPathInfo, remoteHost, requestMethod))
 
 mkLogger :: ULID -> POSIXTime -> Request -> LogLevel -> Logger
-mkLogger accessId reqAt req loglevel item = BS.putStrLn jsonLog
+mkLogger accessId reqAt req loglevel additionalProps' item = BS.putStrLn . encode $ jsonLog <> additionalProps
  where
   jsonLog =
-    encode
-      $ object
-        [ "level" .= show loglevel
-        , "accessId" .= show accessId
-        , "method" .= method
-        , "path" .= path
-        , "reqAt" .= posixSecondsToUTCTime reqAt
-        , "message" .= item
-        , "remoteHost" .= remoteHostAddr
-        , "queryParams" .= queryParams
-        ]
+    fromList
+      [ ("level", toJSON loglevel)
+      , ("accessId", toJSON $ show accessId)
+      , ("method", method)
+      , ("path", path)
+      , ("reqAt", toJSON $ posixSecondsToUTCTime reqAt)
+      , ("message", toJSON item)
+      , ("remoteHost", remoteHostAddr)
+      , ("queryParams", queryParams)
+      ]
 
-  path = decodeUtf8Lenient $ rawPathInfo req
-  method = decodeUtf8Lenient $ requestMethod req
-  remoteHostAddr = show $ remoteHost req
-  queryParams = bimap decodeUtf8Lenient (maybe "" decodeUtf8Lenient) <$> queryString req
-
-v :: Value
-v = object []
-
-j :: KeyMap Value
-j = undefined
-
-k :: KeyMap Value
-k = insert "" v j
+  additionalProps = maybe mempty fromList additionalProps'
+  path = toJSON . decodeUtf8Lenient $ rawPathInfo req
+  method = toJSON . decodeUtf8Lenient $ requestMethod req
+  remoteHostAddr = toJSON . show $ remoteHost req
+  queryParams = toJSON . show $ queryString req

@@ -1,7 +1,7 @@
 module ApiExample.Framework.Types where
 
 import Control.Monad.Reader (ReaderT)
-import Data.Aeson (ToJSON)
+import Data.Aeson (Key, ToJSON, Value)
 import Data.Text
 import Data.Time.Clock.POSIX (POSIXTime)
 import Data.ULID (ULID)
@@ -50,7 +50,7 @@ data Loggers = Loggers
   , info :: Logger
   }
 
-type Logger = forall a. (Show a, ToJSON a) => a -> IO ()
+type Logger = forall a. (Show a, ToJSON a) => Maybe [(Key, Value)] -> a -> IO ()
 
 data LogLevel = Danger | Warning | Info deriving (Generic)
 instance Show LogLevel where
