@@ -3,8 +3,7 @@ module ApiExample.Framework.AppContext (mkAppCtx) where
 import ApiExample.Framework.ReqScopeCtx (ReqScopeCtx)
 import ApiExample.Framework.Types
 import Control.Monad.Trans (liftIO)
-import Data.Time.Clock.POSIX (getPOSIXTime)
-import Data.ULID (getULIDTime)
+import Data.Maybe (fromMaybe)
 import Data.Vault.Lazy qualified as Vault
 import Hasql.Pool (Pool, use)
 import Hasql.Transaction.Sessions (IsolationLevel (..), Mode (..), transaction)
@@ -14,9 +13,12 @@ import Servant (err500, throwError)
 mkAppCtx :: Vault.Key ReqScopeCtx -> IO AppCtx
 mkAppCtx vaultKey = do
   pool <- getPool
-  reqAt <- getPOSIXTime
-  accessId <- getULIDTime reqAt
-  return AppCtx{runDBIO = mkRunnerOfDBIO pool, tx = mkTx pool, accessId, reqAt, vaultKey}
+  return
+    AppCtx
+      { runDBIO = mkRunnerOfDBIO pool
+      , tx = mkTx pool
+      , reqScopeCtx = fromMaybe (error "") . Vault.lookup vaultKey
+      }
 
 mkRunnerOfDBIO :: Pool -> RunDBIO
 mkRunnerOfDBIO pool s = do

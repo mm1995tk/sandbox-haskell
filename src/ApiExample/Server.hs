@@ -1,5 +1,4 @@
 {-# LANGUAGE BlockArguments #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
 
 module ApiExample.Server (startApp) where
 
@@ -58,7 +57,7 @@ setUpGlobalStore vkey app req res = do
   let cur = vault req
   let k = pack . show $ accessId
   let vault' = Vault.insert vkey (ReqScopeCtx accessId reqAt) cur
-  next k vault' 
+  next k vault'
  where
   next k vault' = app req{requestHeaders = ("x-custom-accessId", encodeUtf8 k) : requestHeaders req, vault = vault'} res
 
