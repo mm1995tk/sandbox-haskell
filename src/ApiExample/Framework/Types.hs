@@ -1,10 +1,12 @@
 module ApiExample.Framework.Types where
 
 import Control.Monad.Reader (ReaderT)
+import Data.Aeson (ToJSON)
 import Data.Text
 import Data.Time.Clock.POSIX (POSIXTime)
 import Data.ULID (ULID)
 import Data.Vault.Lazy qualified as Vault
+import GHC.Generics (Generic)
 import Hasql.Session qualified as HSession
 import Hasql.Transaction qualified as Tx
 import Network.Wai (Request)
@@ -39,5 +41,21 @@ type AppAuthHandler = AuthHandler Request Session
 data ReqScopeCtx = ReqScopeCtx
   { accessId :: ULID
   , reqAt :: POSIXTime
+  , loggers :: Loggers
   }
-  deriving (Show)
+
+data Loggers = Loggers
+  { danger :: Logger
+  , warn :: Logger
+  , info :: Logger
+  }
+
+type Logger = forall a. (Show a, ToJSON a) => a -> IO ()
+
+data LogLevel = Danger | Warning | Info deriving (Generic)
+instance Show LogLevel where
+  show Danger = "danger"
+  show Warning = "warning"
+  show Info = "info"
+
+instance ToJSON LogLevel

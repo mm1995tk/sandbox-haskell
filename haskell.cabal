@@ -32,6 +32,7 @@ library
       ApiExample.Endpoint.ListUsers
       ApiExample.Framework
       ApiExample.Framework.AppContext
+      ApiExample.Framework.Logger
       ApiExample.Framework.Security
       ApiExample.Framework.Types
       ApiExample.Infrastructure

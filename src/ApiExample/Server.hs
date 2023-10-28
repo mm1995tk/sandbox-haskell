@@ -55,7 +55,23 @@ setUpGlobalStore vkey app req res = do
   accessId <- getULIDTime reqAt
   let cur = vault req
   let k = T.pack . show $ accessId
-  let vault' = Vault.insert vkey (ReqScopeCtx accessId reqAt) cur
+  let logging :: (LogLevel -> Logger) = mkLogger accessId reqAt
+
+  let vault' =
+        Vault.insert
+          vkey
+          ( ReqScopeCtx
+              { accessId
+              , reqAt
+              , loggers =
+                  Loggers
+                    { danger = logging Danger
+                    , warn = logging Warning
+                    , info = logging Info
+                    }
+              }
+          )
+          cur
   next k vault'
  where
   next k vault' = app req{requestHeaders = ("x-custom-accessId", encodeUtf8 k) : requestHeaders req, vault = vault'} res
@@ -63,20 +79,11 @@ setUpGlobalStore vkey app req res = do
 logMiddleware :: AppCtx -> Middleware
 logMiddleware AppCtx{reqScopeCtx} app req res = do
   let ReqScopeCtx{..} = reqScopeCtx $ vault req
-  BS.putStrLn
-    $ "[Accessed at]:"
-    <> BS.pack (show (posixSecondsToUTCTime reqAt))
-    <> " "
-    <> method
-    <> ": "
-    <> rawPathInfo req
-
-  next
-    <* putStrLn "bye"
-    <* putStrLn ""
+  let Loggers{info} = loggers
+  let info' = info @T.Text
+  info' "start of request" *> next <* info' "end of request"
  where
   next = app req res
-  method = requestMethod req
 
 customFormatters :: ErrorFormatters
 customFormatters =
