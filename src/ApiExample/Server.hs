@@ -61,9 +61,8 @@ setUpGlobalStore vkey app req res = do
   next k vault' = app req{requestHeaders = ("x-custom-accessId", encodeUtf8 k) : requestHeaders req, vault = vault'} res
 
 logMiddleware :: AppCtx -> Middleware
-logMiddleware _ app req res = do
-  reqAt <- getPOSIXTime
-  accessId <- getULIDTime reqAt
+logMiddleware AppCtx{reqScopeCtx} app req res = do
+  let ReqScopeCtx{..} = reqScopeCtx $ vault req
   putStrLn $ "[Accessed at]: " <> show (posixSecondsToUTCTime reqAt)
   print accessId
   putStrLn (unpack method)

@@ -6,7 +6,10 @@ const f = async () => {
   await fetch(url).then(async r => console.log(await r.text()));
 };
 
-await Promise.all([f(), f(), f(), f(), f(), f()]);
+await Promise.all([
+  f(),
+  //  f(), f(), f(), f(), f()
+]);
 
 // await fetch(url, {
 //   method: "POST",
