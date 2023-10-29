@@ -2,13 +2,10 @@ module ApiExample.Endpoint.ListUsers where
 
 import ApiExample.Domain (Person)
 import ApiExample.Framework
-
 import ApiExample.Infrastructure (findAll)
 import Control.Monad.Reader (MonadReader (..), ask)
-import Control.Monad.Trans (liftIO)
 import Data.Text (Text)
 import Data.Vector qualified as Vec
-import MyLib.Utils (threadDelaySec)
 import Servant (FromHttpApiData (parseQueryParam), Get, Header, JSON, QueryParam, Vault, (:>))
 
 type ListUser =
@@ -19,20 +16,13 @@ type ListUser =
     :> Get '[JSON] (Vec.Vector Person)
 
 handleGetUsers :: ServerM ListUser
-handleGetUsers v _ Nothing = do
+handleGetUsers v _ queryParams = do
   let logInfo = logM v Info
-  logInfo (Just [("custom", "xxx"), ("accessId", "xxx")]) @Text "none-0"
 
-  liftIO $ threadDelaySec 3
-  AppCtx{runDBIO} <- ask
-  runDBIO findAll
-handleGetUsers _ _ (Just Asc) = do
-  liftIO $ print "asc"
-
-  AppCtx{runDBIO} <- ask
-  runDBIO findAll
-handleGetUsers _ _ (Just Desc) = do
-  liftIO $ print "desc"
+  case queryParams of
+    Nothing -> logInfo (Just [("custom", "xxx"), ("accessId", "xxx")]) @Text "none"
+    Just Asc -> logInfo Nothing @Text "asc"
+    Just Desc -> logInfo Nothing @Text "desc"
 
   AppCtx{runDBIO} <- ask
   runDBIO findAll
