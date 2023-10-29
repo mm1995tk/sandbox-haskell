@@ -1,10 +1,12 @@
-module ApiExample.Framework.AppContext (mkAppCtx, runDBIO, transaction) where
+module ApiExample.Framework.AppContext (mkAppCtx, runDBIO, transaction, getAccessId, getReqAt) where
 
 import ApiExample.Framework.Types
 import Control.Monad (join)
 import Control.Monad.Reader (asks)
 import Control.Monad.Trans (liftIO)
 import Data.Maybe (fromMaybe)
+import Data.Time.Clock.POSIX (POSIXTime)
+import Data.ULID (ULID)
 import Data.Vault.Lazy qualified as Vault
 import Hasql.Pool (Pool, use)
 import Hasql.Session qualified as HSession
@@ -44,3 +46,18 @@ transaction :: Tx.Transaction a -> HandlerM a
 transaction s = join $ asks tx' <*> pure s
  where
   tx' AppCtx{_tx} = _tx
+
+getAccessId :: Vault.Vault -> HandlerM ULID
+getAccessId v = do
+  reqScopeCtx <- asks reqScopeCtx'
+  let ReqScopeCtx{accessId} = reqScopeCtx v
+  return accessId
+
+getReqAt :: Vault.Vault -> HandlerM POSIXTime
+getReqAt v = do
+  reqScopeCtx <- asks reqScopeCtx'
+  let ReqScopeCtx{reqAt} = reqScopeCtx v
+  return reqAt
+
+reqScopeCtx' :: AppCtx -> Vault.Vault -> ReqScopeCtx
+reqScopeCtx' AppCtx{_reqScopeCtx} = _reqScopeCtx
