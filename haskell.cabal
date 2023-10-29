@@ -157,6 +157,7 @@ test-suite haskell-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      SampleSpec
       Paths_haskell
   hs-source-dirs:
       test
@@ -175,8 +176,11 @@ test-suite haskell-test
       LambdaCase
       MultiWayIf
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-tool-depends:
+      tasty-discover:tasty-discover
   build-depends:
-      aeson
+      QuickCheck
+    , aeson
     , async
     , base >=4.7 && <5
     , bytestring
@@ -188,6 +192,8 @@ test-suite haskell-test
     , hasql-pool
     , hasql-th
     , hasql-transaction
+    , hspec
+    , hspec-wai
     , lens
     , lens-aeson
     , monad-par
@@ -195,6 +201,8 @@ test-suite haskell-test
     , profunctors
     , safe-exceptions
     , servant-server
+    , tasty
+    , tasty-hspec
     , text
     , time
     , ulid

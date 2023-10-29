@@ -108,5 +108,12 @@ tests:
       - -threaded
       - -rtsopts
       - -with-rtsopts=-N
+    build-tools:
+      - tasty-discover
     dependencies:
+      - tasty
+      - tasty-hspec
+      - hspec
+      - hspec-wai
+      - QuickCheck
       - haskell
