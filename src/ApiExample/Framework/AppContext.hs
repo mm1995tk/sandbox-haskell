@@ -14,9 +14,9 @@ mkAppCtx vaultKey = do
   pool <- getPool
   return
     AppCtx
-      { runDBIO = mkRunnerOfDBIO pool
-      , tx = mkTx pool
-      , reqScopeCtx = fromMaybe (error "the vault key is not found.") . Vault.lookup vaultKey
+      { _runDBIO = mkRunnerOfDBIO pool
+      , _tx = mkTx pool
+      , _reqScopeCtx = fromMaybe (error "the vault key is not found.") . Vault.lookup vaultKey
       }
 
 mkRunnerOfDBIO :: Pool -> RunDBIO

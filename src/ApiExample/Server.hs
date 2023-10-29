@@ -75,8 +75,8 @@ setUp vkey app req res = do
       }
 
 logMiddleware :: AppCtx -> Middleware
-logMiddleware AppCtx{reqScopeCtx} app req res = do
-  let ReqScopeCtx{loggers} = reqScopeCtx $ vault req
+logMiddleware AppCtx{_reqScopeCtx} app req res = do
+  let ReqScopeCtx{loggers} = _reqScopeCtx $ vault req
   let logInfo = logIO loggers Info Nothing @T.Text
   logInfo "start of request" *> next <* logInfo "end of request"
  where

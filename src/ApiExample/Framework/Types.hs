@@ -1,6 +1,8 @@
 module ApiExample.Framework.Types where
 
-import Control.Monad.Reader (ReaderT)
+import Control.Monad (join)
+
+import Control.Monad.Reader (ReaderT, asks)
 import Data.Aeson (Key, ToJSON (..), Value)
 import Data.Text
 import Data.Time.Clock.POSIX (POSIXTime)
@@ -21,10 +23,20 @@ type RunDBIO = forall a. HSession.Session a -> HandlerM a
 type AppTx = forall a. Tx.Transaction a -> HandlerM a
 
 data AppCtx = AppCtx
-  { runDBIO :: RunDBIO
-  , tx :: AppTx
-  , reqScopeCtx :: Vault.Vault -> ReqScopeCtx
+  { _runDBIO :: RunDBIO
+  , _tx :: AppTx
+  , _reqScopeCtx :: Vault.Vault -> ReqScopeCtx
   }
+
+runDBIOM :: HSession.Session a -> HandlerM a
+runDBIOM s = join $ asks runDBIO' <*> pure s
+ where
+  runDBIO' AppCtx{_runDBIO} = _runDBIO
+
+txM :: Tx.Transaction a -> HandlerM a
+txM s = join $ asks tx' <*> pure s
+ where
+  tx' AppCtx{_tx} = _tx
 
 type ServerM api = ServerT api HandlerM
 
@@ -50,7 +62,7 @@ data Loggers = Loggers
   , info :: Logger
   }
 
-type Logger = Maybe [(Key, Value)] -> forall a. (Show a, ToJSON a) => a -> IO () 
+type Logger = Maybe [(Key, Value)] -> forall a. (Show a, ToJSON a) => a -> IO ()
 
 data LogLevel = Danger | Warning | Info deriving (Generic)
 

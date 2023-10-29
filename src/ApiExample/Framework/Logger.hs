@@ -48,4 +48,4 @@ logIO Loggers{..} = \case
 getLoggers :: Vault.Vault -> HandlerM Loggers
 getLoggers v = asks loggers' <*> pure v
  where
-  loggers' AppCtx{reqScopeCtx = f} v' = let ReqScopeCtx{loggers} = f v' in loggers
+  loggers' AppCtx{_reqScopeCtx = f} v' = let ReqScopeCtx{loggers} = f v' in loggers
