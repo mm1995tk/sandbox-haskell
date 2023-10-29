@@ -77,10 +77,9 @@ setUpGlobalStore vkey app req res = do
 
 logMiddleware :: AppCtx -> Middleware
 logMiddleware AppCtx{reqScopeCtx} app req res = do
-  let ReqScopeCtx{..} = reqScopeCtx $ vault req
-  let Loggers{info} = loggers
-  let info' = info @T.Text  Nothing
-  info' "start of request" *> next <* info' "end of request"
+  let ReqScopeCtx{loggers} = reqScopeCtx $ vault req
+  let logInfo = logIO loggers Info Nothing @T.Text
+  logInfo "start of request" *> next <* logInfo "end of request"
  where
   next = app req res
 

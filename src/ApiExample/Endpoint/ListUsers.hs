@@ -1,7 +1,8 @@
 module ApiExample.Endpoint.ListUsers where
 
 import ApiExample.Domain (Person)
-import ApiExample.Framework (AppCtx (..), Loggers (Loggers, info), ReqScopeCtx (ReqScopeCtx, loggers), ServerM)
+import ApiExample.Framework
+
 import ApiExample.Infrastructure (findAll)
 import Control.Monad.Reader (MonadReader (..), ask)
 import Control.Monad.Trans (liftIO)
@@ -19,9 +20,8 @@ type ListUser =
 
 handleGetUsers :: ServerM ListUser
 handleGetUsers v _ Nothing = do
-  AppCtx{reqScopeCtx} <- ask
-  let ReqScopeCtx{loggers = Loggers{info}} = reqScopeCtx v
-  liftIO $ info @Text  (Just [("custom", "xxx"), ("accessId", "xxx")]) "none"
+  let logInfo = logM v Info
+  logInfo (Just [("custom", "xxx"), ("accessId", "xxx")]) @Text "none-0"
 
   liftIO $ threadDelaySec 3
   AppCtx{runDBIO} <- ask

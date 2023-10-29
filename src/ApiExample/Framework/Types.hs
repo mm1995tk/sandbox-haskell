@@ -50,7 +50,7 @@ data Loggers = Loggers
   , info :: Logger
   }
 
-type Logger = forall a. (Show a, ToJSON a) => Maybe [(Key, Value)] -> a -> IO ()
+type Logger = Maybe [(Key, Value)] -> forall a. (Show a, ToJSON a) => a -> IO () 
 
 data LogLevel = Danger | Warning | Info deriving (Generic)
 
