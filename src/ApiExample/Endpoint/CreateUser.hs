@@ -4,11 +4,10 @@ import ApiExample.Domain (Person (..))
 import ApiExample.Framework (CookieAuth, ServerM, transaction)
 import ApiExample.Infrastructure
 import ApiExample.Schema (FullName (FullName), PersonRequest (..))
-import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Coerce (coerce)
 import Data.Text qualified as T
-import Data.ULID (getULID)
 import Data.Vector qualified as Vec
+import MyLib.Utils (getULIDM)
 import Servant
 
 type CreateUser =
@@ -19,7 +18,7 @@ type CreateUser =
 
 handleCreateUser :: ServerM CreateUser
 handleCreateUser _ PersonRequest{..} = do
-  ulid <- T.pack . show <$> liftIO getULID
+  ulid <- T.pack . show <$> getULIDM
   maybeUser <- transaction $ do
     users <- findMany' [ulid]
     case Vec.find (\Person{personId = x} -> x == ulid) users of
