@@ -1,7 +1,7 @@
 module ApiExample.Endpoint.GetUser where
 
 import ApiExample.Domain (Person)
-import ApiExample.Framework ( CookieAuth, ServerM, Session (..), runDBIOM)
+import ApiExample.Framework (CookieAuth, ServerM, Session (..), runDBIO)
 import ApiExample.Infrastructure (findMany'')
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Text (Text)
@@ -18,7 +18,7 @@ type GetUser =
 handleGetUser :: ServerM GetUser
 handleGetUser Session{userName} _ uid = do
   liftIO $ print userName
-  users <- runDBIOM $ findMany'' [uid]
+  users <- runDBIO $ findMany'' [uid]
   if Vec.null users
     then throwError err404{errBody = "the user you specified is not found"}
     else return (Vec.head users)

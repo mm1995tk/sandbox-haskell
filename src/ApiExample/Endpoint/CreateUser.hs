@@ -1,7 +1,7 @@
 module ApiExample.Endpoint.CreateUser where
 
 import ApiExample.Domain (Person (..))
-import ApiExample.Framework (CookieAuth, ServerM, txM)
+import ApiExample.Framework (CookieAuth, ServerM, transaction)
 import ApiExample.Infrastructure
 import ApiExample.Schema (FullName (FullName), PersonRequest (..))
 import Control.Monad.IO.Class (MonadIO (liftIO))
@@ -20,7 +20,7 @@ type CreateUser =
 handleCreateUser :: ServerM CreateUser
 handleCreateUser _ PersonRequest{..} = do
   ulid <- T.pack . show <$> liftIO getULID
-  maybeUser <- txM $ do
+  maybeUser <- transaction $ do
     users <- findMany' [ulid]
     case Vec.find (\Person{personId = x} -> x == ulid) users of
       Just _ -> return Nothing

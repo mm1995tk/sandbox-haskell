@@ -3,7 +3,6 @@ module ApiExample.Endpoint.ListUsers where
 import ApiExample.Domain (Person)
 import ApiExample.Framework
 import ApiExample.Infrastructure (findAll)
-import Control.Monad.Reader (MonadReader (..), ask, asks)
 import Data.Text (Text)
 import Data.Vector qualified as Vec
 import Servant (FromHttpApiData (parseQueryParam), Get, Header, JSON, QueryParam, Vault, (:>))
@@ -23,8 +22,7 @@ handleGetUsers v _ queryParams = do
     Nothing -> logInfo (Just [("custom", "xxx"), ("accessId", "xxx")]) @Text "none"
     Just Asc -> logInfo Nothing @Text "asc"
     Just Desc -> logInfo Nothing @Text "desc"
-    
-  runDBIOM findAll
+  runDBIO findAll
 
 data OrderBy = Asc | Desc
 

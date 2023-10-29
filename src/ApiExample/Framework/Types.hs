@@ -1,8 +1,6 @@
 module ApiExample.Framework.Types where
 
-import Control.Monad (join)
-
-import Control.Monad.Reader (ReaderT, asks)
+import Control.Monad.Reader (ReaderT)
 import Data.Aeson (Key, ToJSON (..), Value)
 import Data.Text
 import Data.Time.Clock.POSIX (POSIXTime)
@@ -27,16 +25,6 @@ data AppCtx = AppCtx
   , _tx :: AppTx
   , _reqScopeCtx :: Vault.Vault -> ReqScopeCtx
   }
-
-runDBIOM :: HSession.Session a -> HandlerM a
-runDBIOM s = join $ asks runDBIO' <*> pure s
- where
-  runDBIO' AppCtx{_runDBIO} = _runDBIO
-
-txM :: Tx.Transaction a -> HandlerM a
-txM s = join $ asks tx' <*> pure s
- where
-  tx' AppCtx{_tx} = _tx
 
 type ServerM api = ServerT api HandlerM
 

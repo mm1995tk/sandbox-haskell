@@ -1,11 +1,15 @@
-module ApiExample.Framework.AppContext (mkAppCtx) where
+module ApiExample.Framework.AppContext (mkAppCtx, runDBIO, transaction) where
 
 import ApiExample.Framework.Types
+import Control.Monad (join)
+import Control.Monad.Reader (asks)
 import Control.Monad.Trans (liftIO)
 import Data.Maybe (fromMaybe)
 import Data.Vault.Lazy qualified as Vault
 import Hasql.Pool (Pool, use)
-import Hasql.Transaction.Sessions (IsolationLevel (..), Mode (..), transaction)
+import Hasql.Session qualified as HSession
+import Hasql.Transaction qualified as Tx
+import Hasql.Transaction.Sessions qualified as Txs
 import MyLib.Support (getPool)
 import Servant (err500, throwError)
 
@@ -27,6 +31,16 @@ mkRunnerOfDBIO pool s = do
 mkTx :: Pool -> AppTx
 mkTx pool txQuery = do
   resultOfTx <-
-    let resultOfTx = use pool $ transaction RepeatableRead Write txQuery
+    let resultOfTx = use pool $ Txs.transaction Txs.RepeatableRead Txs.Write txQuery
      in liftIO resultOfTx
   either (\e -> liftIO (print e) *> throwError err500) pure resultOfTx
+
+runDBIO :: HSession.Session a -> HandlerM a
+runDBIO s = join $ asks runDBIO' <*> pure s
+ where
+  runDBIO' AppCtx{_runDBIO} = _runDBIO
+
+transaction :: Tx.Transaction a -> HandlerM a
+transaction s = join $ asks tx' <*> pure s
+ where
+  tx' AppCtx{_tx} = _tx
