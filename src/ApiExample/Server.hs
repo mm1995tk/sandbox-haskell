@@ -10,7 +10,7 @@ import Data.Aeson
 import Data.Functor (($>))
 import Data.Map qualified as M
 import Data.Text qualified as T
-import Data.Text.Encoding (decodeUtf8Lenient, encodeUtf8)
+import Data.Text.Encoding (decodeUtf8Lenient)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.ULID (getULIDTime)
 import Data.Vault.Lazy qualified as Vault
@@ -25,7 +25,7 @@ startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
   vaultKey <- Vault.newKey
   appCtx <- mkAppCtx vaultKey
-  run port . setUpGlobalStore vaultKey . logMiddleware appCtx $ serveWithContext api contexts (mkServer appCtx)
+  run port . setUp vaultKey . logMiddleware appCtx $ serveWithContext api contexts (mkServer appCtx)
  where
   api = Proxy @API
   authCtx = Proxy @'[AppAuthHandler]
@@ -48,32 +48,31 @@ authHandler = mkAuthHandler handler
 
   mkSession sessionId = print ("sessionId: " <> sessionId) $> Session{userName = "dummy", email = "dummy"}
 
-setUpGlobalStore :: Vault.Key ReqScopeCtx -> Middleware
-setUpGlobalStore vkey app req res = do
+setUp :: Vault.Key ReqScopeCtx -> Middleware
+setUp vkey app req res = do
   reqAt <- getPOSIXTime
   accessId <- getULIDTime reqAt
-  let cur = vault req
-  let k = T.pack . show $ accessId
-  let logging :: (LogLevel -> Logger) = mkLogger accessId reqAt req
-
-  let vault' =
-        Vault.insert
-          vkey
-          ( ReqScopeCtx
-              { accessId
-              , reqAt
-              , loggers =
-                  Loggers
-                    { danger = logging Danger
-                    , warn = logging Warning
-                    , info = logging Info
-                    }
-              }
-          )
-          cur
-  next k vault'
+  let vault' = updateVault accessId reqAt $ vault req
+  next vault'
  where
-  next k vault' = app req{requestHeaders = ("x-custom-accessId", encodeUtf8 k) : requestHeaders req, vault = vault'} res
+  next vault' = app req{vault = vault'} res
+
+  updateVault accessId reqAt =
+    Vault.insert
+      vkey
+      ReqScopeCtx
+        { accessId
+        , reqAt
+        , loggers = mkLoggers (mkLogger accessId reqAt req)
+        }
+
+  mkLoggers :: (LogLevel -> Logger) -> Loggers
+  mkLoggers logger =
+    Loggers
+      { danger = logger Danger
+      , warn = logger Warning
+      , info = logger Info
+      }
 
 logMiddleware :: AppCtx -> Middleware
 logMiddleware AppCtx{reqScopeCtx} app req res = do
