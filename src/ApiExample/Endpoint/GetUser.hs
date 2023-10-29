@@ -1,7 +1,7 @@
 module ApiExample.Endpoint.GetUser where
 
 import ApiExample.Domain (Person)
-import ApiExample.Framework (CookieAuth, ServerM, Session (..), runDBIO)
+import ApiExample.Framework
 import ApiExample.Infrastructure (findMany'')
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Text (Text)

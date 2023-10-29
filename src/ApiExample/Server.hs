@@ -52,31 +52,12 @@ setUp :: Vault.Key ReqScopeCtx -> Middleware
 setUp vkey app req res = do
   reqAt <- getPOSIXTime
   accessId <- getULIDTime reqAt
-  let vault' = updateVault accessId reqAt $ vault req
-  next vault'
- where
-  next vault' = app req{vault = vault'} res
-
-  updateVault accessId reqAt =
-    Vault.insert
-      vkey
-      ReqScopeCtx
-        { accessId
-        , reqAt
-        , loggers = mkLoggers (mkLogger accessId reqAt req)
-        }
-
-  mkLoggers :: (LogLevel -> Logger) -> Loggers
-  mkLoggers logger =
-    Loggers
-      { danger = logger Danger
-      , warn = logger Warning
-      , info = logger Info
-      }
+  let vault' = Vault.insert vkey (mkReqScopeCtx accessId reqAt req) (vault req)
+  app req{vault = vault'} res
 
 logMiddleware :: AppCtx -> Middleware
-logMiddleware AppCtx{_reqScopeCtx} app req res = do
-  let ReqScopeCtx{loggers} = _reqScopeCtx $ vault req
+logMiddleware appCtx app req res = do
+  let loggers = extractLoggers . extractReqScopeCtx appCtx $ vault req
   let logInfo = logIO loggers Info Nothing @T.Text
   logInfo "start of request" *> next <* logInfo "end of request"
  where

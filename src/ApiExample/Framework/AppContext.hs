@@ -1,5 +1,15 @@
-module ApiExample.Framework.AppContext (mkAppCtx, runDBIO, transaction, getAccessId, getReqAt) where
+module ApiExample.Framework.AppContext (
+  mkAppCtx,
+  runDBIO,
+  transaction,
+  getAccessId,
+  getReqAt,
+  mkReqScopeCtx,
+  extractReqScopeCtx,
+  extractLoggers
+) where
 
+import ApiExample.Framework.Logger (mkLogger)
 import ApiExample.Framework.Types
 import Control.Monad (join)
 import Control.Monad.Reader (asks)
@@ -13,6 +23,7 @@ import Hasql.Session qualified as HSession
 import Hasql.Transaction qualified as Tx
 import Hasql.Transaction.Sessions qualified as Txs
 import MyLib.Support (getPool)
+import Network.Wai (Request)
 import Servant (err500, throwError)
 
 mkAppCtx :: Vault.Key ReqScopeCtx -> IO AppCtx
@@ -37,6 +48,22 @@ mkTx pool txQuery = do
      in liftIO resultOfTx
   either (\e -> liftIO (print e) *> throwError err500) pure resultOfTx
 
+mkReqScopeCtx :: ULID -> POSIXTime -> Request -> ReqScopeCtx
+mkReqScopeCtx accessId reqAt req =
+  ReqScopeCtx
+    { accessId
+    , reqAt
+    , loggers = mkLoggers (mkLogger accessId reqAt req)
+    }
+ where
+  mkLoggers :: (LogLevel -> Logger) -> Loggers
+  mkLoggers logger =
+    Loggers
+      { danger = logger Danger
+      , warn = logger Warning
+      , info = logger Info
+      }
+
 runDBIO :: HSession.Session a -> HandlerM a
 runDBIO s = join $ asks runDBIO' <*> pure s
  where
@@ -49,15 +76,18 @@ transaction s = join $ asks tx' <*> pure s
 
 getAccessId :: Vault.Vault -> HandlerM ULID
 getAccessId v = do
-  reqScopeCtx <- asks reqScopeCtx'
+  reqScopeCtx <- asks extractReqScopeCtx
   let ReqScopeCtx{accessId} = reqScopeCtx v
   return accessId
 
 getReqAt :: Vault.Vault -> HandlerM POSIXTime
 getReqAt v = do
-  reqScopeCtx <- asks reqScopeCtx'
+  reqScopeCtx <- asks extractReqScopeCtx
   let ReqScopeCtx{reqAt} = reqScopeCtx v
   return reqAt
 
-reqScopeCtx' :: AppCtx -> Vault.Vault -> ReqScopeCtx
-reqScopeCtx' AppCtx{_reqScopeCtx} = _reqScopeCtx
+extractReqScopeCtx :: AppCtx -> Vault.Vault -> ReqScopeCtx
+extractReqScopeCtx AppCtx{_reqScopeCtx} = _reqScopeCtx
+
+extractLoggers :: ReqScopeCtx -> Loggers
+extractLoggers ReqScopeCtx{loggers} = loggers
