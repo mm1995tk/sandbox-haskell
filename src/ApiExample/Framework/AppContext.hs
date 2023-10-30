@@ -6,14 +6,17 @@ module ApiExample.Framework.AppContext (
   getReqAt,
   mkReqScopeCtx,
   extractReqScopeCtx,
-  extractLoggers
+  extractLoggers,
+  withAsyncM,
+  waitM,
 ) where
 
 import ApiExample.Framework.Logger (mkLogger)
 import ApiExample.Framework.Types
+import Control.Concurrent.Async (Async, async, wait, withAsync)
 import Control.Monad (join)
-import Control.Monad.Reader (asks)
-import Control.Monad.Trans (liftIO)
+import Control.Monad.Reader (MonadReader (..), ReaderT (runReaderT), asks)
+import Control.Monad.Trans (MonadIO, liftIO)
 import Data.Maybe (fromMaybe)
 import Data.Time.Clock.POSIX (POSIXTime)
 import Data.ULID (ULID)
@@ -24,7 +27,7 @@ import Hasql.Transaction qualified as Tx
 import Hasql.Transaction.Sessions qualified as Txs
 import MyLib.Support (getPool)
 import Network.Wai (Request)
-import Servant (err500, throwError)
+import Servant (err500, runHandler, throwError)
 
 mkAppCtx :: Vault.Key ReqScopeCtx -> IO AppCtx
 mkAppCtx vaultKey = do
@@ -91,3 +94,17 @@ extractReqScopeCtx AppCtx{_reqScopeCtx} = _reqScopeCtx
 
 extractLoggers :: ReqScopeCtx -> Loggers
 extractLoggers ReqScopeCtx{loggers} = loggers
+
+withAsyncM :: HandlerM a -> (Async a -> HandlerM b) -> HandlerM b
+withAsyncM io f = do
+  ctx <- ask
+  join . liftIO . withAsync (runHandler $ runReaderT io ctx) $ handler
+ where
+  handler x = do
+    tmp <- wait x
+    let applyF = fmap f . async . pure
+    tmp' <- mapM applyF tmp
+    either (const . pure $ throwError err500) return tmp'
+
+waitM :: (MonadIO m) => Async a -> m a
+waitM = liftIO . wait
