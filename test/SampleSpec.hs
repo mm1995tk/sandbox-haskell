@@ -1,8 +1,13 @@
 module SampleSpec where
 
-import Test.Hspec (Spec, describe, it, shouldBe)
+import Test.Hspec (Spec, describe, shouldBe)
+import Test.Hspec.QuickCheck (prop)
+
+addOne :: (Num a) => a -> a
+addOne = (+ 1)
 
 spec_sample :: Spec
 spec_sample = do
   describe "test-test" $ do
-    it "test01" $ 0 `shouldBe` 0
+    prop "test01"
+      $ \x -> addOne x `shouldBe` (x + 1 :: Int)
