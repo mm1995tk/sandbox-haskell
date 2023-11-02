@@ -38,7 +38,6 @@ startApp = do
       (`runReaderT` appCtx)
       serverM
 
--- TODO: setup で認証してMaybe SessionをVaultに別キーで保存しておきそれを取り出してMaybeをはがす処理に書き換える
 authHandler :: Vault.Key (Maybe Session) -> AppAuthHandler
 authHandler vskey = mkAuthHandler handler
  where
