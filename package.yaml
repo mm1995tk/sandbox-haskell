@@ -40,7 +40,7 @@ dependencies:
   - wai
   - warp
   - vault
-  - http-types
+  # - http-types
   - ulid
 
   # validated applicative functor
