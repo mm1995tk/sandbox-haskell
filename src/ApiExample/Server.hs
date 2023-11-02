@@ -4,16 +4,15 @@ module ApiExample.Server (startApp) where
 
 import ApiExample.Endpoint
 import ApiExample.Framework
-import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Reader (ReaderT (runReaderT))
 import Data.Aeson
-import Data.Functor (($>))
 import Data.Map qualified as M
 import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8Lenient)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.ULID (getULIDTime)
 import Data.Vault.Lazy qualified as Vault
+import Network.HTTP.Types (status500)
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
@@ -24,12 +23,12 @@ startApp :: IO ()
 startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
   vaultKey <- Vault.newKey
+  vaultAuthKey <- Vault.newKey
   appCtx <- mkAppCtx vaultKey
-  run port . setUp vaultKey . logMiddleware appCtx $ serveWithContext api contexts (mkServer appCtx)
+  run port . setUp vaultKey vaultAuthKey . logMiddleware appCtx vaultAuthKey $ serveWithContext api (customFormatters :. authHandler vaultAuthKey :. EmptyContext) (mkServer appCtx)
  where
   api = Proxy @API
   authCtx = Proxy @'[AppAuthHandler]
-  contexts = customFormatters :. authHandler :. EmptyContext
 
   mkServer :: AppCtx -> Server API
   mkServer appCtx =
@@ -39,29 +38,39 @@ startApp = do
       (`runReaderT` appCtx)
       serverM
 
-authHandler :: AppAuthHandler
-authHandler = mkAuthHandler handler
+-- TODO: setup で認証してMaybe SessionをVaultに別キーで保存しておきそれを取り出してMaybeをはがす処理に書き換える
+authHandler :: Vault.Key (Maybe Session) -> AppAuthHandler
+authHandler vskey = mkAuthHandler handler
  where
-  handler req = case M.lookup "session-id" =<< extractCookies req of
-    Just sessionId -> liftIO $ mkSession sessionId
+  handler req = case Vault.lookup vskey (vault req) of
+    Just (Just session) -> return session
+    Nothing -> throwError err500
     _ -> throwError err401
 
-  mkSession sessionId = print ("sessionId: " <> sessionId) $> Session{userName = "dummy", email = "dummy"}
-
-setUp :: Vault.Key ReqScopeCtx -> Middleware
-setUp vkey app req res = do
+setUp :: Vault.Key ReqScopeCtx -> Vault.Key (Maybe Session) -> Middleware
+setUp vkey vskey app req res = do
   reqAt <- getPOSIXTime
   accessId <- getULIDTime reqAt
   let vault' = Vault.insert vkey (mkReqScopeCtx accessId reqAt req) (vault req)
-  app req{vault = vault'} res
+  let vault'' = flip (Vault.insert vskey) vault' $ do
+        sessionId <- M.lookup "session-id" =<< extractCookies req
+        findSession sessionId
+  app req{vault = vault''} res
+ where
+  findSession _ = Just Session{userName = "dummy", email = "dummy"}
 
-logMiddleware :: AppCtx -> Middleware
-logMiddleware appCtx app req res = do
-  let loggers = extractLoggers . extractReqScopeCtx appCtx $ vault req
-  let logInfo = logIO loggers Info Nothing @T.Text
-  logInfo "start of request" *> next <* logInfo "end of request"
+logMiddleware :: AppCtx -> Vault.Key (Maybe Session) -> Middleware
+logMiddleware appCtx vskey app req res = case Vault.lookup vskey (vault req) of
+  Nothing -> res $ responseLBS status500 [] ""
+  Just session -> do
+    let loggers = extractLoggers . extractReqScopeCtx appCtx $ vault req
+    let logInfo = logIO loggers Info (addSessionInfo session) @T.Text
+    logInfo "start of request" *> next <* logInfo "end of request"
  where
   next = app req res
+  addSessionInfo session = do
+    Session{..} <- session
+    return [("userName", toJSON userName)]
 
 customFormatters :: ErrorFormatters
 customFormatters =

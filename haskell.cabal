@@ -83,6 +83,7 @@ library
     , hasql-pool
     , hasql-th
     , hasql-transaction
+    , http-types
     , lens
     , lens-aeson
     , monad-par
@@ -90,6 +91,7 @@ library
     , profunctors
     , safe-exceptions
     , servant-server
+    , stm
     , text
     , time
     , ulid
@@ -135,6 +137,7 @@ executable haskell-exe
     , hasql-pool
     , hasql-th
     , hasql-transaction
+    , http-types
     , lens
     , lens-aeson
     , monad-par
@@ -142,6 +145,7 @@ executable haskell-exe
     , profunctors
     , safe-exceptions
     , servant-server
+    , stm
     , text
     , time
     , ulid
@@ -194,6 +198,7 @@ test-suite haskell-test
     , hasql-transaction
     , hspec
     , hspec-wai
+    , http-types
     , lens
     , lens-aeson
     , monad-par
@@ -201,6 +206,7 @@ test-suite haskell-test
     , profunctors
     , safe-exceptions
     , servant-server
+    , stm
     , tasty
     , tasty-hspec
     , text
