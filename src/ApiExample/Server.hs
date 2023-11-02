@@ -12,7 +12,6 @@ import Data.Text.Encoding (decodeUtf8Lenient)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.ULID (getULIDTime)
 import Data.Vault.Lazy qualified as Vault
-import Network.HTTP.Types (status500)
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
@@ -25,7 +24,7 @@ startApp = do
   vaultKey <- Vault.newKey
   vaultAuthKey <- Vault.newKey
   appCtx <- mkAppCtx vaultKey
-  run port . setUp vaultKey vaultAuthKey . logMiddleware appCtx vaultAuthKey $ serveWithContext api (customFormatters :. authHandler vaultAuthKey :. EmptyContext) (mkServer appCtx)
+  run port . setUp vaultKey vaultAuthKey . logMiddleware appCtx $ serveWithContext api (customFormatters :. authHandler vaultAuthKey :. EmptyContext) (mkServer appCtx)
  where
   api = Proxy @API
   authCtx = Proxy @'[AppAuthHandler]
@@ -50,26 +49,20 @@ setUp :: Vault.Key ReqScopeCtx -> Vault.Key (Maybe Session) -> Middleware
 setUp vkey vskey app req res = do
   reqAt <- getPOSIXTime
   accessId <- getULIDTime reqAt
-  let vault' = Vault.insert vkey (mkReqScopeCtx accessId reqAt req) (vault req)
-  let vault'' = flip (Vault.insert vskey) vault' $ do
-        sessionId <- M.lookup "session-id" =<< extractCookies req
-        findSession sessionId
+  let s = extractCookies req >>= M.lookup "session-id" >>= findSession
+  let vault' = Vault.insert vkey (mkReqScopeCtx s accessId reqAt req) (vault req)
+  let vault'' = Vault.insert vskey s vault'
   app req{vault = vault''} res
  where
   findSession _ = Just Session{userName = "dummy", email = "dummy"}
 
-logMiddleware :: AppCtx -> Vault.Key (Maybe Session) -> Middleware
-logMiddleware appCtx vskey app req res = case Vault.lookup vskey (vault req) of
-  Nothing -> res $ responseLBS status500 [] ""
-  Just session -> do
-    let loggers = extractLoggers . extractReqScopeCtx appCtx $ vault req
-    let logInfo = logIO loggers Info (addSessionInfo session) @T.Text
-    logInfo "start of request" *> next <* logInfo "end of request"
+logMiddleware :: AppCtx -> Middleware
+logMiddleware appCtx app req res = do
+  let loggers = extractLoggers . extractReqScopeCtx appCtx $ vault req
+  let logInfo = logIO loggers Info Nothing @T.Text
+  logInfo "start of request" *> next <* logInfo "end of request"
  where
   next = app req res
-  addSessionInfo session = do
-    Session{..} <- session
-    return [("userName", toJSON userName)]
 
 customFormatters :: ErrorFormatters
 customFormatters =

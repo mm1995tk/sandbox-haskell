@@ -5,7 +5,7 @@ module ApiExample.Framework.Logger (mkLogger, logM, logIO, getLoggers) where
 import ApiExample.Framework.Types
 import Control.Monad.Reader
 import Data.Aeson
-import Data.Aeson.KeyMap (fromList)
+import Data.Aeson.KeyMap (KeyMap, fromList)
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Text.Encoding (decodeUtf8Lenient)
 import Data.Time.Clock.POSIX (POSIXTime, posixSecondsToUTCTime)
@@ -13,8 +13,8 @@ import Data.ULID (ULID)
 import Data.Vault.Lazy qualified as Vault
 import Network.Wai (Request (queryString, rawPathInfo, remoteHost, requestMethod))
 
-mkLogger :: ULID -> POSIXTime -> Request -> LogLevel -> Logger
-mkLogger accessId reqAt req loglevel additionalProps' item = BS.putStrLn . encode $ jsonLog <> additionalProps
+mkLogger :: Maybe Session -> ULID -> POSIXTime -> Request -> LogLevel -> Logger
+mkLogger s accessId reqAt req loglevel additionalProps' item = BS.putStrLn . encode $ jsonLog <> sessionInfo <> additionalProps
  where
   jsonLog =
     fromList
@@ -27,6 +27,11 @@ mkLogger accessId reqAt req loglevel additionalProps' item = BS.putStrLn . encod
       , ("remoteHost", remoteHostAddr)
       , ("queryParams", queryParams)
       ]
+
+  sessionInfo :: KeyMap Value
+  sessionInfo = case s of
+    Nothing -> mempty
+    Just Session{..} -> fromList [("userName", toJSON userName)]
 
   additionalProps = maybe mempty fromList additionalProps'
   path = toJSON . decodeUtf8Lenient $ rawPathInfo req

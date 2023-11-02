@@ -51,12 +51,12 @@ mkTx pool txQuery = do
      in liftIO resultOfTx
   either (\e -> liftIO (print e) *> throwError err500) pure resultOfTx
 
-mkReqScopeCtx :: ULID -> POSIXTime -> Request -> ReqScopeCtx
-mkReqScopeCtx accessId reqAt req =
+mkReqScopeCtx :: Maybe Session -> ULID -> POSIXTime -> Request -> ReqScopeCtx
+mkReqScopeCtx s accessId reqAt req =
   ReqScopeCtx
     { accessId
     , reqAt
-    , loggers = mkLoggers (mkLogger accessId reqAt req)
+    , loggers = mkLoggers (mkLogger s accessId reqAt req)
     }
  where
   mkLoggers :: (LogLevel -> Logger) -> Loggers
