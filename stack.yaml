@@ -5,3 +5,4 @@ packages:
 
 extra-deps:
   - validation-selective-0.2.0.0
+  - bytestring-conversion-0.3.2

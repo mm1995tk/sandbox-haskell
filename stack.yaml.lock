@@ -11,6 +11,13 @@ packages:
       size: 697
   original:
     hackage: validation-selective-0.2.0.0
+- completed:
+    hackage: bytestring-conversion-0.3.2@sha256:156804ee1178e1d57a4c834968a1f70ba490a158fad410771910bd0be6444122,2546
+    pantry-tree:
+      sha256: f0a7c09ece25d568dbb832b11b7f5c105e40e4fc7faf0be4d3c363a67aaf9bbd
+      size: 700
+  original:
+    hackage: bytestring-conversion-0.3.2
 snapshots:
 - completed:
     sha256: fb482b8e2d5d061cdda4ba1da2957c012740c893a5ee1c1b99001adae7b1fbe7

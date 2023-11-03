@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      ApiExample.Config.Env
       ApiExample.Domain
       ApiExample.Endpoint
       ApiExample.Endpoint.CreateUser
@@ -76,6 +77,7 @@ library
     , async
     , base >=4.7 && <5
     , bytestring
+    , bytestring-conversion
     , comonad
     , conduit
     , containers
@@ -128,6 +130,7 @@ executable haskell-exe
     , async
     , base >=4.7 && <5
     , bytestring
+    , bytestring-conversion
     , comonad
     , conduit
     , containers
@@ -186,6 +189,7 @@ test-suite haskell-test
     , async
     , base >=4.7 && <5
     , bytestring
+    , bytestring-conversion
     , comonad
     , conduit
     , containers
