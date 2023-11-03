@@ -24,7 +24,10 @@ startApp = do
   vaultKey <- Vault.newKey
   vaultAuthKey <- Vault.newKey
   appCtx <- mkAppCtx vaultKey
-  run port . setUp vaultKey vaultAuthKey . logMiddleware appCtx $ serveWithContext api (customFormatters :. authHandler vaultAuthKey :. EmptyContext) (mkServer appCtx)
+  let middleware = setUp vaultKey vaultAuthKey . logMiddleware appCtx
+  let contexts = customFormatters :. authHandler vaultAuthKey :. EmptyContext
+  let app = serveWithContext api contexts $ mkServer appCtx
+  run port $ middleware app
  where
   api = Proxy @API
   authCtx = Proxy @'[AppAuthHandler]
