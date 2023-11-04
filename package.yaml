@@ -30,6 +30,10 @@ dependencies:
   - comonad
   - safe-exceptions
   - mtl
+  - effectful
+  - effectful-core
+  - effectful-plugin
+  - effectful-th
   - lens
   - aeson
   - lens-aeson
@@ -89,6 +93,7 @@ ghc-options:
   - -Wmissing-home-modules
   - -Wpartial-fields
   - -Wredundant-constraints
+  - -fplugin=Effectful.Plugin
 
 library:
   source-dirs: src
@@ -103,6 +108,9 @@ executables:
       - -with-rtsopts=-N
     dependencies:
       - haskell
+    when:
+      - condition: false
+        other-modules: Paths_haskell
 
 tests:
   haskell-test:
