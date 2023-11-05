@@ -3,7 +3,7 @@
 module ApiExample.Framework.Logger (mkLogger, logM, logIO, getLoggers) where
 
 import ApiExample.Framework.Types
-import Control.Monad.Reader
+import Control.Monad.Reader hiding (ask)
 import Data.Aeson
 import Data.Aeson.KeyMap (KeyMap, fromList)
 import Data.ByteString.Lazy.Char8 qualified as BS
@@ -11,6 +11,7 @@ import Data.Text.Encoding (decodeUtf8Lenient)
 import Data.Time.Clock.POSIX (POSIXTime, posixSecondsToUTCTime)
 import Data.ULID (ULID)
 import Data.Vault.Lazy qualified as Vault
+import Effectful.Reader.Dynamic (Reader, ask)
 import Network.Wai (Request (queryString, rawPathInfo, remoteHost, requestMethod))
 
 mkLogger :: Maybe Session -> ULID -> POSIXTime -> Request -> LogLevel -> Logger
@@ -51,6 +52,8 @@ logIO Loggers{..} = \case
   Info -> info
 
 getLoggers :: Vault.Vault -> HandlerM Loggers
-getLoggers v = asks loggers' <*> pure v
+getLoggers v = do
+  ctx <- ask
+  return $ loggers' ctx v
  where
   loggers' AppCtx{_reqScopeCtx = f} v' = let ReqScopeCtx{loggers} = f v' in loggers

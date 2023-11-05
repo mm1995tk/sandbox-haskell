@@ -6,7 +6,8 @@ import ApiExample.Infrastructure (findMany'')
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Text (Text)
 import Data.Vector qualified as Vec
-import Servant
+import Effectful.Error.Dynamic
+import Servant hiding (throwError)
 
 type GetUser =
   "users"

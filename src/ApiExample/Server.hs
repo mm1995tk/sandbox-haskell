@@ -17,6 +17,7 @@ import Network.Wai.Handler.Warp
 import Servant
 import Servant.Server.Experimental.Auth
 import System.Environment (getEnv)
+import ApiExample.Framework.Types (runHandlerM)
 
 startApp :: IO ()
 startApp = do
@@ -37,7 +38,7 @@ startApp = do
     hoistServerWithContext
       api
       authCtx
-      (`runReaderT` appCtx)
+      (runHandlerM appCtx)
       serverM
 
 authHandler :: Vault.Key (Maybe Session) -> AppAuthHandler

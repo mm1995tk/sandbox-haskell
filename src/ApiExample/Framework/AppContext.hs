@@ -15,19 +15,20 @@ import ApiExample.Framework.Logger (mkLogger)
 import ApiExample.Framework.Types
 import Control.Concurrent.Async (Async, async, wait, withAsync)
 import Control.Monad (join)
-import Control.Monad.Reader (MonadReader (..), ReaderT (runReaderT), asks)
 import Control.Monad.Trans (MonadIO, liftIO)
 import Data.Maybe (fromMaybe)
 import Data.Time.Clock.POSIX (POSIXTime)
 import Data.ULID (ULID)
 import Data.Vault.Lazy qualified as Vault
+import Effectful.Error.Dynamic
+import Effectful.Reader.Dynamic (ask, asks)
 import Hasql.Pool (Pool, use)
 import Hasql.Session qualified as HSession
 import Hasql.Transaction qualified as Tx
 import Hasql.Transaction.Sessions qualified as Txs
 import MyLib.Support (getPool)
 import Network.Wai (Request)
-import Servant (err500, runHandler, throwError)
+import Servant (err500, runHandler)
 
 mkAppCtx :: Vault.Key ReqScopeCtx -> IO AppCtx
 mkAppCtx vaultKey = do
@@ -98,7 +99,7 @@ extractLoggers ReqScopeCtx{loggers} = loggers
 withAsyncM :: HandlerM a -> (Async a -> HandlerM b) -> HandlerM b
 withAsyncM io f = do
   ctx <- ask
-  join . liftIO . withAsync (runHandler $ runReaderT io ctx) $ handler
+  join . liftIO . withAsync (runHandler $ runHandlerM ctx io) $ handler
  where
   handler x = do
     tmp <- wait x

@@ -7,8 +7,9 @@ import ApiExample.Schema (FullName (FullName), PersonRequest (..))
 import Data.Coerce (coerce)
 import Data.Text qualified as T
 import Data.Vector qualified as Vec
+import Effectful.Error.Dynamic
 import MyLib.Utils (getULIDM)
-import Servant
+import Servant hiding (throwError)
 
 type CreateUser =
   "users"

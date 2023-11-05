@@ -1,3 +1,5 @@
+{-# LANGUAGE BlockArguments #-}
+
 module ApiExample.Framework.Types where
 
 import Control.Monad.Reader (ReaderT)
@@ -6,15 +8,44 @@ import Data.Text
 import Data.Time.Clock.POSIX (POSIXTime)
 import Data.ULID (ULID)
 import Data.Vault.Lazy qualified as Vault
+import Effectful (Eff, Effect, IOE, liftIO, runEff, (:>))
+import Effectful.Dispatch.Dynamic (interpret, localSeqLift, localSeqUnlift, localUnlift, reinterpret)
+import Effectful.Error.Dynamic (Error, runError)
+import Effectful.Error.Dynamic qualified as Effectful
+import Effectful.Reader.Dynamic
+import Effectful.TH (makeEffect)
 import GHC.Generics (Generic)
 import Hasql.Session qualified as HSession
 import Hasql.Transaction qualified as Tx
 import Network.Wai (Request)
-import Servant (AuthProtect, Handler)
+import Servant (AuthProtect, Handler, ServerError (ServerError), err500, runHandler, throwError)
 import Servant.Server (HasServer (ServerT))
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData)
 
-type HandlerM = ReaderT AppCtx Handler
+data WrappedHandler :: Effect where
+  WrapHandler :: (Handler a) -> WrappedHandler m a
+
+makeEffect ''WrappedHandler
+
+runWrappedHandler :: (IOE :> es, Error ServerError :> es) => Eff (WrappedHandler : es) a -> Eff es (a)
+runWrappedHandler = interpret k
+ where
+  k _ (WrapHandler v) = do
+    d <- liftIO $ runHandler v
+    case d of
+      Right v -> return v
+      Left e -> Effectful.throwError e
+
+runHandlerM :: AppCtx -> HandlerM x -> Handler x
+runHandlerM ctx e = do
+  j <- liftIO . runEff . runError @ServerError . runWrappedHandler . runReader ctx $ e
+  case j of
+    Right v -> return v
+    Left _ -> throwError err500
+
+type ServerM api = ServerT api HandlerM
+
+type HandlerM = Eff '[Reader AppCtx, WrappedHandler, Error ServerError, IOE]
 
 type RunDBIO = forall a. HSession.Session a -> HandlerM a
 
@@ -25,8 +56,6 @@ data AppCtx = AppCtx
   , _tx :: AppTx
   , _reqScopeCtx :: Vault.Vault -> ReqScopeCtx
   }
-
-type ServerM api = ServerT api HandlerM
 
 type Cookies = [(Text, Text)]
 
