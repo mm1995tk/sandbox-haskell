@@ -1,19 +1,6 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
-
 module ApiExample.GraphQL.API (gqlApi) where
 
-import Data.Morpheus (deriveApp, interpreter)
+import Data.Morpheus (deriveApp, App)
 import Data.Morpheus.Document (importGQLDocument)
 import Data.Morpheus.Types (RootResolver (..), Undefined)
 
@@ -36,4 +23,5 @@ rootResolver =
         , power = pure (Just pow)
         }
 
+gqlApi :: App () IO
 gqlApi = deriveApp rootResolver
