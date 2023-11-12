@@ -30,12 +30,14 @@ library
       ApiExample.Endpoint
       ApiExample.Endpoint.CreateUser
       ApiExample.Endpoint.GetUser
+      ApiExample.Endpoint.GraphQL
       ApiExample.Endpoint.ListUsers
       ApiExample.Framework
       ApiExample.Framework.AppContext
       ApiExample.Framework.Logger
       ApiExample.Framework.Security
       ApiExample.Framework.Types
+      ApiExample.GraphQL.API
       ApiExample.Infrastructure
       ApiExample.Infrastructure.Aggregate.Person
       ApiExample.Schema
@@ -92,6 +94,7 @@ library
     , lens
     , lens-aeson
     , monad-par
+    , morpheus-graphql
     , mtl
     , profunctors
     , safe-exceptions
@@ -148,6 +151,7 @@ executable haskell-exe
     , lens
     , lens-aeson
     , monad-par
+    , morpheus-graphql
     , mtl
     , profunctors
     , safe-exceptions
@@ -213,6 +217,7 @@ test-suite haskell-test
     , lens
     , lens-aeson
     , monad-par
+    , morpheus-graphql
     , mtl
     , profunctors
     , safe-exceptions

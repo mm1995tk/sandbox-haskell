@@ -1,0 +1,20 @@
+type Query {
+  deity(name: String!, pow: String!): Deity!
+}
+
+# type Subscription {
+#   newDeity: Deity!
+# }
+
+# type Mutation {
+#   createDeity(name: String!, power: String): Deity!
+# }
+
+type Deity {
+  name: String!
+  power: String
+}
+
+schema {
+  query: Query
+}
