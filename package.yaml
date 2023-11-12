@@ -42,6 +42,7 @@ dependencies:
   - unix
 
   - morpheus-graphql
+  - http-media
 
   - servant-server
   - wai
