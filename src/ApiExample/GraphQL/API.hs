@@ -6,19 +6,26 @@
 module ApiExample.GraphQL.API (gqlApi) where
 
 import Data.Morpheus (App, deriveApp)
-import Data.Morpheus.Types (GQLType, ResolverQ, RootResolver (..), Undefined)
+import Data.Morpheus.Types (GQLType, QUERY, Resolver, ResolverQ, RootResolver (..), Undefined)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
 data Query m = Query
-  { deity :: DeityArgs -> m Deity
-  , deityAll :: m [Deity]
+  { deity :: DeityArgs -> m (Deity m)
+  , deityAll :: m [Deity m]
   }
   deriving (Generic, GQLType)
 
-data Deity = Deity
+data Child = Child
+  { name :: Text
+  , age :: Int
+  }
+  deriving (Generic, GQLType)
+
+data Deity m = Deity
   { name :: Text
   , power :: Maybe Text
+  , children :: m [Child]
   }
   deriving (Generic, GQLType)
 
@@ -36,25 +43,31 @@ rootResolver =
     , subscriptionResolver = undefined
     }
  where
-  deityAll :: ResolverQ e IO [Deity]
+  deityAll :: ResolverQ e IO [Deity (Resolver QUERY e IO)]
   deityAll =
     return
       [ Deity
           { name = "name01"
           , power = Just "pow1"
+          , children = children 0
           }
       , Deity
           { name = "name02"
           , power = Just "pow2"
+          , children = children 1
           }
       ]
-  deity :: DeityArgs -> ResolverQ e IO Deity
+  deity :: DeityArgs -> ResolverQ e IO (Deity (Resolver QUERY e IO))
   deity DeityArgs{name, pow} =
-    pure
+    return
       Deity
         { name = name
         , power = pow
+        , children = children 2
         }
+
+  children :: Int -> ResolverQ e IO [Child]
+  children age = pure [Child{name = "x", age}]
 
 gqlApi :: App () IO
 gqlApi = deriveApp rootResolver
