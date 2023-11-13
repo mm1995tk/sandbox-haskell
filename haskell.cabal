@@ -93,8 +93,10 @@ library
     , lens-aeson
     , monad-par
     , mtl
+    , openapi3
     , profunctors
     , safe-exceptions
+    , servant-openapi3
     , servant-server
     , stm
     , text
@@ -149,8 +151,10 @@ executable haskell-exe
     , lens-aeson
     , monad-par
     , mtl
+    , openapi3
     , profunctors
     , safe-exceptions
+    , servant-openapi3
     , servant-server
     , stm
     , text
@@ -214,8 +218,10 @@ test-suite haskell-test
     , lens-aeson
     , monad-par
     , mtl
+    , openapi3
     , profunctors
     , safe-exceptions
+    , servant-openapi3
     , servant-server
     , stm
     , tasty

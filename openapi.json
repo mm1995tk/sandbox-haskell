@@ -1,0 +1,78 @@
+{
+    "components": {
+        "schemas": {
+            "Person": {
+                "properties": {
+                    "age": {
+                        "maximum": 9223372036854775807,
+                        "minimum": -9223372036854775808,
+                        "type": "integer"
+                    },
+                    "fullName": {
+                        "type": "string"
+                    },
+                    "personId": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "personId",
+                    "age",
+                    "fullName"
+                ],
+                "type": "object"
+            }
+        }
+    },
+    "info": {
+        "title": "",
+        "version": ""
+    },
+    "openapi": "3.0.0",
+    "paths": {
+        "/users": {
+            "get": {
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "user-agent",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "order-by",
+                        "required": false,
+                        "schema": {
+                            "enum": [
+                                "Asc",
+                                "Desc"
+                            ],
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json;charset=utf-8": {
+                                "schema": {
+                                    "items": {
+                                        "$ref": "#/components/schemas/Person"
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Invalid `order-by` or `user-agent`"
+                    }
+                }
+            }
+        }
+    }
+}

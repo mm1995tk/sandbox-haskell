@@ -3,8 +3,10 @@ module ApiExample.Endpoint.ListUsers where
 import ApiExample.Domain (Person)
 import ApiExample.Framework
 import ApiExample.Infrastructure (findAll)
+import Data.OpenApi (ToParamSchema)
 import Data.Text (Text)
 import Data.Vector qualified as Vec
+import GHC.Generics (Generic)
 import Servant (FromHttpApiData (parseQueryParam), Get, Header, JSON, QueryParam, Vault, (:>))
 
 type ListUser =
@@ -24,7 +26,9 @@ handleGetUsers v _ queryParams = do
     Just Desc -> logInfo Nothing @Text "desc"
   runDBIO findAll
 
-data OrderBy = Asc | Desc
+data OrderBy = Asc | Desc deriving (Generic)
+
+instance ToParamSchema OrderBy
 
 instance FromHttpApiData OrderBy where
   parseQueryParam "asc" = Right Asc

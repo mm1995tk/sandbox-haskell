@@ -45,6 +45,8 @@ dependencies:
   - wai
   - warp
   - vault
+  - servant-openapi3
+  - openapi3
   # - http-types
   - ulid
 
