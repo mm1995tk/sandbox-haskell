@@ -42,6 +42,8 @@ dependencies:
   - unix
 
   - morpheus-graphql
+  - haxl
+  - hashable
   - http-media
 
   - servant-server

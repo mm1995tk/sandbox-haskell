@@ -87,10 +87,12 @@ library
     , effectful-core
     , effectful-plugin
     , effectful-th
+    , hashable
     , hasql
     , hasql-pool
     , hasql-th
     , hasql-transaction
+    , haxl
     , http-media
     , lens
     , lens-aeson
@@ -144,11 +146,13 @@ executable haskell-exe
     , effectful-core
     , effectful-plugin
     , effectful-th
+    , hashable
     , haskell
     , hasql
     , hasql-pool
     , hasql-th
     , hasql-transaction
+    , haxl
     , http-media
     , lens
     , lens-aeson
@@ -209,11 +213,13 @@ test-suite haskell-test
     , effectful-core
     , effectful-plugin
     , effectful-th
+    , hashable
     , haskell
     , hasql
     , hasql-pool
     , hasql-th
     , hasql-transaction
+    , haxl
     , hspec
     , hspec-wai
     , http-media
