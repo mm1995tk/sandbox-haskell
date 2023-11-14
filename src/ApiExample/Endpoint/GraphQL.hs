@@ -29,12 +29,12 @@ type Schema = "schema.gql" :> Get '[PlainText] Text
 
 type Playground = Get '[HTML] ByteString
 
-type Endpoint (name :: Symbol) = name :> (API :<|> Schema :<|> Playground)
+type Endpoint (name :: Symbol) = name :> Vault :> (API :<|> Schema :<|> Playground)
 
 type GraphQL = Endpoint "gql"
 
 handleGql :: ServerM GraphQL
-handleGql = api :<|> withSchema gqlApi :<|> pure httpPlayground
+handleGql _ = api :<|> withSchema gqlApi :<|> pure httpPlayground
  where
   api body = liftIO $ runApp @GQLRequest @GQLResponse gqlApi body
 
