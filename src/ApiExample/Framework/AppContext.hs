@@ -42,13 +42,15 @@ mkAppCtx vaultKey = do
 mkRunnerOfDBIO :: Pool -> RunDBIO
 mkRunnerOfDBIO pool s = do
   resultOfSQLQuery <- liftIO $ use pool s
-  either (const $ throwError err500) pure resultOfSQLQuery
+  -- TODO: きちんとログに出す。エラーから復帰したい場合の処理を考える
+  either (\e -> liftIO (print e) *> throwError err500) pure resultOfSQLQuery
 
 mkTx :: Pool -> AppTx
 mkTx pool txQuery = do
   resultOfTx <-
     let resultOfTx = use pool $ Txs.transaction Txs.RepeatableRead Txs.Write txQuery
      in liftIO resultOfTx
+  -- TODO: きちんとログに出す。エラーから復帰したい場合の処理を考える
   either (\e -> liftIO (print e) *> throwError err500) pure resultOfTx
 
 mkReqScopeCtx :: Maybe Session -> ULID -> POSIXTime -> Request -> ReqScopeCtx
