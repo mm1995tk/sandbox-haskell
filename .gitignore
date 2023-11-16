@@ -6,3 +6,4 @@ src/Sandbox.hs
 
 docker/*/data
 docker/*/dump
+.env.local
