@@ -1,7 +1,10 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module ApiExample.Framework.Types where
 
 import Control.Monad.Reader (ReaderT)
 import Data.Aeson (Key, ToJSON (..), Value)
+import Data.OpenApi (ToSchema)
 import Data.Text
 import Data.Time.Clock.POSIX (POSIXTime)
 import Data.ULID (ULID)
@@ -10,7 +13,8 @@ import GHC.Generics (Generic)
 import Hasql.Session qualified as HSession
 import Hasql.Transaction qualified as Tx
 import Network.Wai (Request)
-import Servant (AuthProtect, Handler)
+import Servant (AuthProtect, Handler, Proxy (..), (:>))
+import Servant.OpenApi (HasOpenApi (toOpenApi))
 import Servant.Server (HasServer (ServerT))
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData)
 
@@ -33,6 +37,9 @@ type Cookies = [(Text, Text)]
 data Session = Session {userName :: Text, email :: Text}
 
 type CookieAuth = AuthProtect "cookie"
+
+instance (HasOpenApi a) => HasOpenApi (CookieAuth :> a) where
+  toOpenApi _ = toOpenApi (Proxy @a)
 
 type instance AuthServerData CookieAuth = Session
 

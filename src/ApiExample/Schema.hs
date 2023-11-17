@@ -5,6 +5,7 @@ import Data.Aeson.TH (deriveJSON)
 import Data.Aeson.Types
 import Data.Text qualified as T
 import GHC.Generics
+import Data.OpenApi (ToSchema, ToParamSchema)
 
 newtype FullName = FullName T.Text deriving (Generic)
 
@@ -22,5 +23,9 @@ data PersonRequest = PersonRequest
   , age :: Int
   }
   deriving (Generic)
+
+instance ToParamSchema FullName
+instance ToSchema FullName
+instance ToSchema PersonRequest
 
 $(deriveJSON defaultOptions ''PersonRequest)

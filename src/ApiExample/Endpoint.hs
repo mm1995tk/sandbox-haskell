@@ -13,11 +13,11 @@ import Servant
 
 $(deriveJSON defaultOptions ''Person)
 
-type API = ListUser
+-- type API = ListUser
 
--- type API = ListUser :<|> GetUser :<|> CreateUser
+type API = ListUser :<|> GetUser :<|> CreateUser
 
 serverM :: ServerM API
-serverM = handleGetUsers
+-- serverM = handleGetUsers
 
--- serverM = handleGetUsers :<|> handleGetUser :<|> handleCreateUser
+serverM = handleGetUsers :<|> handleGetUser :<|> handleCreateUser

@@ -21,8 +21,7 @@ import Servant.OpenApi.Internal.Test
 import Servant.Server.Experimental.Auth
 import System.Environment (getEnv)
 
-outputDoc = do
-  BSL8.writeFile "openapi.json" $ encodePretty $ toOpenApi (Proxy @API)
+outputDoc = BSL8.writeFile "openapi.json" $ encodePretty $ toOpenApi (Proxy @API)
 
 startApp :: IO ()
 startApp = do

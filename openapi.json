@@ -1,6 +1,9 @@
 {
     "components": {
         "schemas": {
+            "FullName": {
+                "type": "string"
+            },
             "Person": {
                 "properties": {
                     "age": {
@@ -19,6 +22,23 @@
                     "personId",
                     "age",
                     "fullName"
+                ],
+                "type": "object"
+            },
+            "PersonRequest": {
+                "properties": {
+                    "age": {
+                        "maximum": 9223372036854775807,
+                        "minimum": -9223372036854775808,
+                        "type": "integer"
+                    },
+                    "fullName": {
+                        "$ref": "#/components/schemas/FullName"
+                    }
+                },
+                "required": [
+                    "fullName",
+                    "age"
                 ],
                 "type": "object"
             }
@@ -70,6 +90,72 @@
                     },
                     "400": {
                         "description": "Invalid `order-by` or `user-agent`"
+                    }
+                }
+            },
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json;charset=utf-8": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PersonRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json;charset=utf-8": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Person"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Invalid `body`"
+                    }
+                }
+            }
+        },
+        "/users/{user-id}": {
+            "get": {
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "user-agent",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "user-id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json;charset=utf-8": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Person"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Invalid `user-agent`"
+                    },
+                    "404": {
+                        "description": "`user-id` not found"
                     }
                 }
             }
