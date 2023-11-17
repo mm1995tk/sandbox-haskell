@@ -38,6 +38,7 @@ library
       ApiExample.Framework.Types
       ApiExample.Infrastructure
       ApiExample.Infrastructure.Aggregate.Person
+      ApiExample.OpenAPI
       ApiExample.Schema
       ApiExample.Server
       Examples.AsyncExample

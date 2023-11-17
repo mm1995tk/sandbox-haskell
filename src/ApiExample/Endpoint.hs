@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module ApiExample.Endpoint (serverM, API) where
+module ApiExample.Endpoint (serverM, API, ReadAPI, WriteAPI) where
 
 import ApiExample.Domain (Person)
 import ApiExample.Endpoint.CreateUser
@@ -15,9 +15,13 @@ $(deriveJSON defaultOptions ''Person)
 
 -- type API = ListUser
 
-type API = ListUser :<|> GetUser :<|> CreateUser
+type API = ReadAPI :<|> CreateUser
+
+type ReadAPI = ListUser :<|> GetUser
+type WriteAPI = CreateUser
 
 serverM :: ServerM API
--- serverM = handleGetUsers
+serverM = r :<|> handleCreateUser
 
-serverM = handleGetUsers :<|> handleGetUser :<|> handleCreateUser
+r :: ServerM ReadAPI
+r = handleGetUsers :<|> handleGetUser

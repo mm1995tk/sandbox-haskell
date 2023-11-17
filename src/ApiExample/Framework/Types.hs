@@ -2,9 +2,12 @@
 
 module ApiExample.Framework.Types where
 
+import Control.Lens ((%~), (.~), (?~))
+import Control.Lens.Lens ((&))
 import Control.Monad.Reader (ReaderT)
 import Data.Aeson (Key, ToJSON (..), Value)
-import Data.OpenApi (ToSchema)
+import Data.OpenApi (OpenApiType (OpenApiString), ParamLocation (..), Referenced (..), description, in_, name, schema, type_)
+import Data.OpenApi.Operation
 import Data.Text
 import Data.Time.Clock.POSIX (POSIXTime)
 import Data.ULID (ULID)
@@ -14,7 +17,7 @@ import Hasql.Session qualified as HSession
 import Hasql.Transaction qualified as Tx
 import Network.Wai (Request)
 import Servant (AuthProtect, Handler, Proxy (..), (:>))
-import Servant.OpenApi (HasOpenApi (toOpenApi))
+import Servant.OpenApi.Internal
 import Servant.Server (HasServer (ServerT))
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData)
 
@@ -39,7 +42,19 @@ data Session = Session {userName :: Text, email :: Text}
 type CookieAuth = AuthProtect "cookie"
 
 instance (HasOpenApi a) => HasOpenApi (CookieAuth :> a) where
-  toOpenApi _ = toOpenApi (Proxy @a)
+  toOpenApi _ = toOpenApi (Proxy @a) & addDefaultResponse401 "session-id" & addParam param
+   where
+    param =
+      mempty
+        & name .~ "session-id"
+        & description ?~ "session-id"
+        & in_ .~ ParamCookie
+        & schema ?~ Inline (mempty & type_ ?~ OpenApiString)
+    addDefaultResponse401 pname = setResponseWith (\old _new -> alter401 old) 401 (return response401)
+     where
+      sname = markdownCode pname
+      alter401 = description %~ (<> (" or " <> sname))
+      response401 = mempty & description .~ "description401"
 
 type instance AuthServerData CookieAuth = Session
 

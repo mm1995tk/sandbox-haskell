@@ -6,7 +6,6 @@ import ApiExample.Endpoint
 import ApiExample.Framework
 import Control.Monad.Reader (ReaderT (runReaderT))
 import Data.Aeson
-import Data.ByteString.Lazy.Char8 qualified as BSL8
 import Data.Map qualified as M
 import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8Lenient)
@@ -16,12 +15,8 @@ import Data.Vault.Lazy qualified as Vault
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
-import Servant.OpenApi (toOpenApi)
-import Servant.OpenApi.Internal.Test
 import Servant.Server.Experimental.Auth
 import System.Environment (getEnv)
-
-outputDoc = BSL8.writeFile "openapi.json" $ encodePretty $ toOpenApi (Proxy @API)
 
 startApp :: IO ()
 startApp = do
