@@ -1,28 +1,28 @@
 module ApiExample.OpenAPI where
 
 import ApiExample.Endpoint
-import Control.Lens 
+import Control.Lens
 import Data.ByteString.Lazy.Char8 qualified as BSL8
 import Data.OpenApi
-import GHC.IsList ( fromList)
+import GHC.IsList (fromList)
 import Servant
-import Servant.OpenApi (subOperations, toOpenApi)
-import Servant.OpenApi.Internal.Test
+import Servant.OpenApi (toOpenApi)
+import Servant.OpenApi.Internal.Test (encodePretty)
 
 outputDoc :: IO ()
-outputDoc =
-  BSL8.writeFile "openapi.json" $ encodePretty $ toOpenApi (Proxy @API)
-    & info . title .~ "User API"
+outputDoc = BSL8.writeFile "openapi.json" $ encodePretty openapi'
+
+openapi' :: OpenApi
+openapi' =
+  toOpenApi (Proxy @API)
+    & info . title .~ "Sandbox API"
     & info . version .~ "1.0"
-    & info . description ?~ "This is an API for the Users service"
+    & info . description ?~ "This is an API"
     & info . license ?~ "MIT"
     & servers .~ ["https://example.com"]
-    & applyTagsFor (subOperations (Proxy @ReadAPI) (Proxy @API)) ["ReadAPI" & description ?~ "read in crud"]
-    & applyTagsFor (subOperations (Proxy @WriteAPI) (Proxy @API)) ["WriteAPI" & description ?~ "all except read in crud"]
     & components . securitySchemes .~ SecurityDefinitions (fromList defs)
+    & openapiEndpointInfo
  where
   defs =
-    [ ("Bearer", s)
+    [ ("Bearer", SecurityScheme (SecuritySchemeHttp (HttpSchemeBearer Nothing)) (Just "サンプル"))
     ]
-
-  s = SecurityScheme (SecuritySchemeHttp (HttpSchemeBearer Nothing)) (Just "サンプル")

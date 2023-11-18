@@ -3,11 +3,16 @@
 module MyLib.Utils where
 
 import Control.Concurrent (threadDelay)
+import Control.Lens ((%~), (&))
 import Control.Monad.Trans (MonadIO, liftIO)
+import Data.Data (Proxy)
 import Data.Either (fromRight)
+import Data.OpenApi (OpenApi, Operation)
 import Data.Text qualified as T
 import Data.ULID (ULID, getULID, ulidFromInteger)
 import Data.ULID.Base32 (decode)
+import Servant.OpenApi (HasOpenApi, subOperations)
+import Servant.OpenApi.Internal.TypeLevel (IsSubAPI)
 
 threadDelaySec :: Int -> IO ()
 threadDelaySec = threadDelay . (* 1000000)
@@ -28,3 +33,6 @@ ulidToText = T.pack . show
 
 getULIDM :: (MonadIO m) => m ULID
 getULIDM = liftIO getULID
+
+infoSubApi :: (IsSubAPI sub api, HasOpenApi sub) => Proxy sub -> (Operation -> Operation) -> Proxy api -> (OpenApi -> OpenApi)
+infoSubApi sub operationLens api openapi' = openapi' & subOperations sub api %~ operationLens

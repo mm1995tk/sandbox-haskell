@@ -52,11 +52,11 @@
         }
     },
     "info": {
-        "description": "This is an API for the Users service",
+        "description": "This is an API",
         "license": {
             "name": "MIT"
         },
-        "title": "User API",
+        "title": "Sandbox API",
         "version": "1.0"
     },
     "openapi": "3.0.0",
@@ -110,6 +110,7 @@
                 ]
             },
             "post": {
+                "description": "create user",
                 "parameters": [
                     {
                         "description": "session-id",
@@ -214,12 +215,12 @@
     ],
     "tags": [
         {
-            "description": "read in crud",
-            "name": "ReadAPI"
-        },
-        {
             "description": "all except read in crud",
             "name": "WriteAPI"
+        },
+        {
+            "description": "read in crud",
+            "name": "ReadAPI"
         }
     ]
 }
