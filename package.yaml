@@ -47,6 +47,7 @@ dependencies:
   - vault
   - servant-openapi3
   - openapi3
+  - http-media
   # - http-types
   - ulid
 

@@ -1,44 +1,18 @@
 import createClient from "openapi-fetch";
 import { paths } from "./p";
 
-const url = "http://127.0.0.1:8081/users";
+const url = "http://127.0.0.1:8080";
 
-const openapiClient = createClient<paths>({ baseUrl: "https://myapi.dev/v1/" });
+const openapiClient = createClient<paths>({ baseUrl: url });
 
-const {
-  data, // only present if 2XX response
-  error, // only present if 4XX or 5XX response
-} = await openapiClient.GET("/pet/findByStatus", {
+const r = await openapiClient.GET("/users/{user-id}", {
   params: {
-    query: { status: "sold" },
+    path: { "user-id": "01HE8J6FXQNK3V36RNZGVH95MX" },
   },
 });
 
-await openapiClient.PUT("/pet", {
-  body: {
-    name: "",
-    photoUrls: [],
-  },
-});
-
-const json = { fullName: "0", age: 30 };
-
-const f = async () => {
-  await fetch(url).then(async r => console.log(await r.text()));
-};
-
-await Promise.all([
-  f(),
-  //  f(), f(), f(), f(), f()
-]);
-
-// await fetch(url, {
-//   method: "POST",
-//   body: JSON.stringify(json),
-//   headers: {
-//     Cookie: "session-id=poipoi-x",
-//     "Content-Type": "application/json",
-//   },
-// }).then(async r => {
-//   console.log(await r.text());
-// });
+if (r.data) {
+  console.log(r.data);
+} else {
+  console.log(r.error);
+}

@@ -2,9 +2,11 @@ module ApiExample.OpenAPI where
 
 import ApiExample.Endpoint
 import ApiExample.Framework.Security
+import ApiExample.Framework.Types
 import Control.Lens
 import Data.ByteString.Lazy.Char8 qualified as BSL8
 import Data.OpenApi
+import Data.Semigroup (sconcat)
 import GHC.IsList (fromList)
 import MyLib.Utils (showText)
 import Servant
@@ -22,6 +24,7 @@ openapi' =
     & info . description ?~ "This is an API"
     & info . license ?~ "MIT"
     & servers .~ ["https://example.com"]
+    & components . schemas %~ (<>) (fromList [("Http401ErrorRespBody", toSchema (Proxy @Http401ErrorRespBody))])
     & components . securitySchemes .~ SecurityDefinitions (fromList defs)
     & openapiEndpointInfo
  where

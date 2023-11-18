@@ -6,15 +6,19 @@ import Control.Lens ((%~), (.~), (?~))
 import Control.Lens.Lens ((&))
 import Control.Monad.Reader (ReaderT)
 import Data.Aeson (Key, ToJSON (..), Value)
-import Data.OpenApi (OpenApiType (OpenApiString), ParamLocation (..), Referenced (..), description, in_, name, schema, type_)
+import Data.Data (Typeable)
+import Data.OpenApi (HasProperties (properties), OpenApiType (OpenApiObject, OpenApiString), ParamLocation (..), Referenced (..), content, description, in_, name, schema, type_)
 import Data.OpenApi.Operation
+import Data.OpenApi.Schema
 import Data.Text
 import Data.Time.Clock.POSIX (POSIXTime)
 import Data.ULID (ULID)
 import Data.Vault.Lazy qualified as Vault
 import GHC.Generics (Generic)
+import GHC.IsList (IsList (fromList))
 import Hasql.Session qualified as HSession
 import Hasql.Transaction qualified as Tx
+import Network.HTTP.Media ((//))
 import Network.Wai (Request)
 import Servant (AuthProtect, Handler, Proxy (..), (:>))
 import Servant.OpenApi.Internal
@@ -41,6 +45,14 @@ data Session = Session {userName :: Text, email :: Text}
 
 type CookieAuth = AuthProtect "cookie"
 
+newtype Http401ErrorRespBody = Http401ErrorRespBody {message :: Text} deriving (Generic, Typeable, Show)
+
+instance ToJSON Http401ErrorRespBody
+instance ToSchema Http401ErrorRespBody where
+  declareNamedSchema p = (schema %~ type') <$> genericDeclareNamedSchema defaultSchemaOptions p
+   where
+    type' = (type_ ?~ OpenApiObject) . (properties .~ fromList [("message", toSchemaRef (Proxy @Text))])
+
 instance (HasOpenApi a) => HasOpenApi (CookieAuth :> a) where
   toOpenApi _ = toOpenApi (Proxy @a) & addDefaultResponse401 "session-id" & addParam param
    where
@@ -54,7 +66,8 @@ instance (HasOpenApi a) => HasOpenApi (CookieAuth :> a) where
      where
       sname = markdownCode pname
       alter401 = description %~ (<> (" or " <> sname))
-      response401 = mempty & description .~ "description401"
+      response401 = mempty & (description .~ "description401") . (content .~ fromList [("application" // "json", mediaTypeObj)])
+      mediaTypeObj = mempty & schema ?~ toSchemaRef (Proxy @Http401ErrorRespBody)
 
 type instance AuthServerData CookieAuth = Session
 

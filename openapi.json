@@ -6,6 +6,15 @@
         "minLength": 4,
         "type": "string"
       },
+      "Http401ErrorRespBody": {
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["message"],
+        "type": "object"
+      },
       "Person": {
         "properties": {
           "age": {
@@ -140,6 +149,13 @@
             "description": "Invalid `body`"
           },
           "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Http401ErrorRespBody"
+                }
+              }
+            },
             "description": "description401"
           }
         },
@@ -195,6 +211,13 @@
             "description": "Invalid `user-agent`"
           },
           "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Http401ErrorRespBody"
+                }
+              }
+            },
             "description": "description401"
           },
           "404": {
