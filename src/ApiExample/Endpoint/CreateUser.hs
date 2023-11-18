@@ -4,6 +4,7 @@ module ApiExample.Endpoint.CreateUser where
 
 import ApiExample.Domain (Person (..))
 import ApiExample.Framework (CookieAuth, ServerM, transaction)
+import ApiExample.Framework.Security
 import ApiExample.Infrastructure
 import ApiExample.Schema (FullName (FullName), PersonRequest (..))
 import Control.Lens
@@ -25,7 +26,7 @@ openapiEndpointInfo :: forall api. (IsSubAPI Endpoint api) => Proxy api -> (Open
 openapiEndpointInfo = infoSubApi @Endpoint @api Proxy $ description' . sec
  where
   description' = description ?~ "create user"
-  sec = security .~ []
+  sec = securityRequirements [[(Bearer, [])]]
 
 handler :: ServerM Endpoint
 handler _ PersonRequest{..} = do

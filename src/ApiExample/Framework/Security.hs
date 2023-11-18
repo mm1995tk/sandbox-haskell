@@ -1,9 +1,14 @@
-module ApiExample.Framework.Security (extractCookies) where
+module ApiExample.Framework.Security (extractCookies, SecuritySchemeKey (..), securityRequirements) where
 
 import ApiExample.Framework.Types (Cookies)
+import Control.Lens
+import Data.Bifunctor (first)
 import Data.Map qualified as M
+import Data.OpenApi (HasSecurity (..), SecurityRequirement (..))
 import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8Lenient)
+import GHC.IsList (fromList)
+import MyLib.Utils (showText)
 import Network.Wai (Request (requestHeaders))
 
 extractCookies :: Request -> Maybe (M.Map T.Text T.Text)
@@ -15,3 +20,13 @@ parseCookies cookieText =
  where
   toTuple [key, value] = (key, value)
   toTuple _ = error "Invalid cookie string format"
+
+data SecuritySchemeKey = Bearer
+
+instance Show SecuritySchemeKey where
+  show Bearer = "bearer"
+
+securityRequirements :: (HasSecurity t [SecurityRequirement]) => [[(SecuritySchemeKey, [T.Text])]] -> t -> t
+securityRequirements xs = security .~ f xs
+ where
+  f = fmap $ \xs' -> SecurityRequirement $ fromList (first showText <$> xs')

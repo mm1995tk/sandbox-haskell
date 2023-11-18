@@ -1,10 +1,12 @@
 module ApiExample.OpenAPI where
 
 import ApiExample.Endpoint
+import ApiExample.Framework.Security
 import Control.Lens
 import Data.ByteString.Lazy.Char8 qualified as BSL8
 import Data.OpenApi
 import GHC.IsList (fromList)
+import MyLib.Utils (showText)
 import Servant
 import Servant.OpenApi (toOpenApi)
 import Servant.OpenApi.Internal.Test (encodePretty)
@@ -24,5 +26,5 @@ openapi' =
     & openapiEndpointInfo
  where
   defs =
-    [ ("Bearer", SecurityScheme (SecuritySchemeHttp (HttpSchemeBearer Nothing)) (Just "サンプル"))
+    [ (showText Bearer, SecurityScheme (SecuritySchemeHttp (HttpSchemeBearer Nothing)) (Just "サンプル"))
     ]
