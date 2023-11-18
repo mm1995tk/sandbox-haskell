@@ -10,8 +10,8 @@ module ApiExample.Endpoint (
 
 import ApiExample.Domain (Person)
 import ApiExample.Endpoint.CreateUser qualified as CreateUser
-import ApiExample.Endpoint.GetUser
-import ApiExample.Endpoint.ListUsers
+import ApiExample.Endpoint.GetUser qualified as GetUser
+import ApiExample.Endpoint.ListUsers qualified as ListUser
 import ApiExample.Framework (ServerM)
 import Control.Lens
 import Data.Aeson (defaultOptions)
@@ -25,14 +25,14 @@ $(deriveJSON defaultOptions ''Person)
 
 type API = ReadAPI :<|> WriteAPI
 
-type ReadAPI = ListUser :<|> GetUser
+type ReadAPI = ListUser.Endpoint :<|> GetUser.Endpoint
 type WriteAPI = CreateUser.Endpoint
 
 serverM :: ServerM API
 serverM = readApi :<|> writeApi
 
 readApi :: ServerM ReadAPI
-readApi = handleGetUsers :<|> handleGetUser
+readApi = ListUser.handler :<|> GetUser.handler
 
 writeApi :: ServerM WriteAPI
 writeApi = CreateUser.handler
@@ -47,4 +47,9 @@ tagForWriteApi :: OpenApi -> OpenApi
 tagForWriteApi = applyTagsFor (subOperations (Proxy @WriteAPI) (Proxy @API)) ["WriteAPI" & description ?~ "all except read in crud"]
 
 openapiEndpointInfo :: OpenApi -> OpenApi
-openapiEndpointInfo = tagForReadApi . tagForWriteApi . CreateUser.openapiEndpointInfo apiProxy
+openapiEndpointInfo =
+  tagForReadApi
+    . tagForWriteApi
+    . CreateUser.openapiEndpointInfo apiProxy
+    . GetUser.openapiEndpointInfo apiProxy
+    . ListUser.openapiEndpointInfo apiProxy

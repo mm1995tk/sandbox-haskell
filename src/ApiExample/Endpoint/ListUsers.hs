@@ -4,19 +4,29 @@ import ApiExample.Domain (Person)
 import ApiExample.Framework
 import ApiExample.Infrastructure (findAll)
 import ApiExample.Schema
+import Control.Lens
+import Data.OpenApi (OpenApi, description)
+import Data.Proxy (Proxy (..))
 import Data.Text (Text)
 import Data.Vector qualified as Vec
+import MyLib.Utils (infoSubApi)
 import Servant (Get, Header, JSON, QueryParam, Vault, (:>))
+import Servant.OpenApi.Internal.TypeLevel (IsSubAPI)
 
-type ListUser =
+type Endpoint =
   "users"
     :> Vault
     :> Header "user-agent" Text
     :> QueryParam "order-by" OrderBy
     :> Get '[JSON] (Vec.Vector Person)
 
-handleGetUsers :: ServerM ListUser
-handleGetUsers v _ queryParams = do
+openapiEndpointInfo :: forall api. (IsSubAPI Endpoint api) => Proxy api -> (OpenApi -> OpenApi)
+openapiEndpointInfo = infoSubApi @Endpoint @api Proxy description'
+ where
+  description' = description ?~ "create user"
+
+handler :: ServerM Endpoint
+handler v _ queryParams = do
   let logInfo = logM v Info
 
   case queryParams of
