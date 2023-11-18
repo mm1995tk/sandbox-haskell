@@ -3,7 +3,7 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "gen": "openapi-typescript petstore.json -o p.ts"
+    "gen": "openapi-typescript ../openapi.json -o p.ts"
   },
   "devDependencies": {
     "bun-types": "latest",
