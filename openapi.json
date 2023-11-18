@@ -2,6 +2,8 @@
   "components": {
     "schemas": {
       "FullName": {
+        "example": "namenamename",
+        "minLength": 4,
         "type": "string"
       },
       "Person": {
@@ -22,6 +24,10 @@
         "type": "object"
       },
       "PersonRequest": {
+        "example": {
+          "age": 30,
+          "fullName": "person-name"
+        },
         "properties": {
           "age": {
             "maximum": 9223372036854775807,
