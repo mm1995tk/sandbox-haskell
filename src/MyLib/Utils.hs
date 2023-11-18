@@ -35,7 +35,7 @@ getULIDM :: (MonadIO m) => m ULID
 getULIDM = liftIO getULID
 
 infoSubApi :: (IsSubAPI sub api, HasOpenApi sub) => Proxy sub -> (Operation -> Operation) -> Proxy api -> (OpenApi -> OpenApi)
-infoSubApi sub operationLens api openapi' = openapi' & subOperations sub api %~ operationLens
+infoSubApi sub operationLens api = subOperations sub api %~ operationLens
 
 showText :: (Show s) => s -> T.Text
 showText = T.pack . show
