@@ -23,7 +23,7 @@ type Endpoint =
 openapiEndpointInfo :: forall api. (IsSubAPI Endpoint api) => Proxy api -> (OpenApi -> OpenApi)
 openapiEndpointInfo = infoSubApi @Endpoint @api Proxy description'
  where
-  description' = description ?~ "create user"
+  description' = description ?~ "list user"
 
 handler :: ServerM Endpoint
 handler v _ queryParams = do

@@ -71,7 +71,7 @@
   "paths": {
     "/users": {
       "get": {
-        "description": "create user",
+        "description": "list user",
         "parameters": [
           {
             "in": "header",
@@ -169,7 +169,7 @@
     },
     "/users/{user-id}": {
       "get": {
-        "description": "create user",
+        "description": "find user",
         "parameters": [
           {
             "description": "session-id",
