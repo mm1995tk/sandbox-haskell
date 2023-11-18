@@ -77,10 +77,12 @@
                         "name": "order-by",
                         "required": false,
                         "schema": {
+                            "description": "sort asc or desc",
                             "enum": [
-                                "Asc",
-                                "Desc"
+                                "asc",
+                                "desc"
                             ],
+                            "title": "order-by",
                             "type": "string"
                         }
                     }

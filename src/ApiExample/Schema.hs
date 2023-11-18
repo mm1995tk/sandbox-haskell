@@ -1,11 +1,13 @@
 module ApiExample.Schema where
 
+import Control.Lens
 import Data.Aeson
 import Data.Aeson.TH (deriveJSON)
 import Data.Aeson.Types
+import Data.OpenApi
 import Data.Text qualified as T
 import GHC.Generics
-import Data.OpenApi (ToSchema, ToParamSchema)
+import Servant (FromHttpApiData, parseQueryParam)
 
 newtype FullName = FullName T.Text deriving (Generic)
 
@@ -29,3 +31,22 @@ instance ToSchema FullName
 instance ToSchema PersonRequest
 
 $(deriveJSON defaultOptions ''PersonRequest)
+
+data OrderBy = Asc | Desc
+
+instance ToParamSchema OrderBy where
+  toParamSchema _ =
+    mempty
+      & title ?~ "order-by"
+      & description ?~ "sort asc or desc"
+      & type_ ?~ OpenApiString
+      & enum_ ?~ [toJSON Asc, toJSON Desc]
+
+instance ToJSON OrderBy where
+  toJSON Asc = toJSON @T.Text "asc"
+  toJSON Desc = toJSON @T.Text "desc"
+
+instance FromHttpApiData OrderBy where
+  parseQueryParam "asc" = Right Asc
+  parseQueryParam "desc" = Right Desc
+  parseQueryParam _ = Left "must be \"asc\" or \"desc\""
