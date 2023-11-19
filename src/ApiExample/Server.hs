@@ -38,7 +38,7 @@ startApp = do
       api
       authCtx
       (`runReaderT` appCtx)
-      (serverM appCtx)
+      serverM
 
 authHandler :: Vault.Key (Maybe Session) -> AppAuthHandler
 authHandler vskey = mkAuthHandler handler
