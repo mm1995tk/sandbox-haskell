@@ -31,7 +31,6 @@ type Schema = "schema.gql" :> Get '[PlainText] Text
 type Playground = Get '[HTML] ByteString
 
 type Endpoint (name :: Symbol) = name :> Vault :> (API :<|> Schema :<|> Playground)
-type Endpoint (name :: Symbol) = name :> Vault :> (API :<|> Schema :<|> Playground)
 
 type GraphQL = Endpoint "gql"
 
