@@ -35,6 +35,7 @@ mkAppCtx vaultKey = do
   return
     AppCtx
       { _runDBIO = mkRunnerOfDBIO pool
+      , runDBIO' = use pool
       , _tx = mkTx pool
       , _reqScopeCtx = fromMaybe (error "the vault key is not found.") . Vault.lookup vaultKey
       }

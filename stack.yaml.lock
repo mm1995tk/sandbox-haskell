@@ -18,6 +18,13 @@ packages:
       size: 700
   original:
     hackage: bytestring-conversion-0.3.2
+- completed:
+    hackage: haxl-2.4.0.0@sha256:6cefd8c188440f96ca7dbfae41ac5bf33756f732c682dce908cdc10b849d7959,4026
+    pantry-tree:
+      sha256: ec3a0e9f45b9454239ccdc72e0ac8b6ca627b94721dcd2327d123a8af10d71e9
+      size: 3218
+  original:
+    hackage: haxl-2.4.0.0
 snapshots:
 - completed:
     sha256: 5921ddc75f5dd3f197fbc32e1e5676895a8e7b971d4f82ef6b556657801dd18a

@@ -6,3 +6,6 @@ packages:
 extra-deps:
   - validation-selective-0.2.0.0
   - bytestring-conversion-0.3.2
+
+  # .stack/config.yamlにallow-newer: trueを追加
+  - haxl-2.4.0.0

@@ -1,7 +1,7 @@
 module ApiExample.Endpoint.GraphQL (handleGql, GraphQL) where
 
-import ApiExample.Framework (ServerM)
-import ApiExample.GraphQL.API (gqlApi)
+import ApiExample.Framework (AppCtx, ServerM)
+import ApiExample.GraphQL.API (gqlApi, initState)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.ByteString.Lazy.Char8
 import Data.Data (Typeable)
@@ -12,6 +12,7 @@ import Data.Text (Text)
 import Data.Text.Lazy qualified as LT
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import GHC.TypeLits
+import Haxl.Core
 import Network.HTTP.Media ((//), (/:))
 import Servant
 
@@ -30,13 +31,17 @@ type Schema = "schema.gql" :> Get '[PlainText] Text
 type Playground = Get '[HTML] ByteString
 
 type Endpoint (name :: Symbol) = name :> Vault :> (API :<|> Schema :<|> Playground)
+type Endpoint (name :: Symbol) = name :> Vault :> (API :<|> Schema :<|> Playground)
 
 type GraphQL = Endpoint "gql"
 
-handleGql :: ServerM GraphQL
-handleGql _ = api :<|> withSchema gqlApi :<|> pure httpPlayground
+handleGql :: AppCtx -> ServerM GraphQL
+handleGql ctx _ = api :<|> withSchema gqlApi :<|> pure httpPlayground
  where
-  api body = liftIO $ runApp @GQLRequest @GQLResponse gqlApi body
+  api body = liftIO . runHaxl' $ runApp @GQLRequest @GQLResponse gqlApi body
+  runHaxl' m = do
+    hctx <- initEnv (stateSet initState stateEmpty) ctx
+    runHaxl hctx m
 
 withSchema :: (Applicative f) => App e m -> f Text
 withSchema = pure . LT.toStrict . decodeUtf8 . render

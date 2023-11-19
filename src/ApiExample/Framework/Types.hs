@@ -13,6 +13,7 @@ import Network.Wai (Request)
 import Servant (AuthProtect, Handler)
 import Servant.Server (HasServer (ServerT))
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData)
+import Hasql.Pool (UsageError)
 
 type HandlerM = ReaderT AppCtx Handler
 
@@ -24,6 +25,7 @@ data AppCtx = AppCtx
   { _runDBIO :: RunDBIO
   , _tx :: AppTx
   , _reqScopeCtx :: Vault.Vault -> ReqScopeCtx
+  , runDBIO' :: forall a. HSession.Session a -> IO (Either UsageError a)
   }
 
 type ServerM api = ServerT api HandlerM
