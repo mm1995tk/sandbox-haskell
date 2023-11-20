@@ -1,4 +1,4 @@
-module ApiExample.Endpoint.ListUsers where
+module ApiExample.OpenAPI.ListUsers where
 
 import ApiExample.Domain (Person)
 import ApiExample.Framework

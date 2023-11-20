@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 
-module ApiExample.Endpoint.GetUser where
+module ApiExample.OpenAPI.GetUser where
 
 import ApiExample.Domain (Person)
 import ApiExample.Framework

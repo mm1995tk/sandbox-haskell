@@ -31,9 +31,10 @@ instance DataSourceName DatasourceReq where
   dataSourceName _ = "UserDataSource"
 
 instance StateKey DatasourceReq where
-  data State DatasourceReq = DatasourceReqState ()
+  data State DatasourceReq = DatasourceReqState
 
-initState = DatasourceReqState ()
+initState :: State DatasourceReq
+initState = DatasourceReqState
 
 type Haxl = GenHaxl AppCtx ()
 

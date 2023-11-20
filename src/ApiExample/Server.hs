@@ -2,11 +2,10 @@
 
 module ApiExample.Server (startApp) where
 
-import ApiExample.Endpoint
-import ApiExample.Endpoint.GraphQL (GraphQL, handleGql)
 import ApiExample.Framework
 import ApiExample.Framework.Types (Http401ErrorRespBody (..))
-import Control.Monad.Reader (ReaderT (runReaderT))
+import ApiExample.GraphQL (GraphQL, handleGql)
+import ApiExample.OpenAPI
 import Data.Aeson
 import Data.Map qualified as M
 import Data.Text qualified as T

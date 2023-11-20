@@ -1,4 +1,4 @@
-module ApiExample.Endpoint.GraphQL (handleGql, GraphQL) where
+module ApiExample.GraphQL (handleGql, GraphQL) where
 
 import ApiExample.Framework (ServerM)
 import ApiExample.GraphQL.API (gqlApi, initState)

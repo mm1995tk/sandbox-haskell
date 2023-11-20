@@ -27,21 +27,20 @@ library
   exposed-modules:
       ApiExample.Config.Env
       ApiExample.Domain
-      ApiExample.Endpoint
-      ApiExample.Endpoint.CreateUser
-      ApiExample.Endpoint.GetUser
-      ApiExample.Endpoint.GraphQL
-      ApiExample.Endpoint.ListUsers
       ApiExample.Framework
       ApiExample.Framework.Alias
       ApiExample.Framework.AppContext
       ApiExample.Framework.Logger
       ApiExample.Framework.Security
       ApiExample.Framework.Types
+      ApiExample.GraphQL
       ApiExample.GraphQL.API
       ApiExample.Infrastructure
       ApiExample.Infrastructure.Aggregate.Person
       ApiExample.OpenAPI
+      ApiExample.OpenAPI.CreateUser
+      ApiExample.OpenAPI.GetUser
+      ApiExample.OpenAPI.ListUsers
       ApiExample.Schema
       ApiExample.Server
       Examples.AsyncExample

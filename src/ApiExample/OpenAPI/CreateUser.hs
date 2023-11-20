@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module ApiExample.Endpoint.CreateUser where
+module ApiExample.OpenAPI.CreateUser where
 
 import ApiExample.Domain (Person (..))
 import ApiExample.Framework
