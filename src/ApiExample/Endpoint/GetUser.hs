@@ -2,7 +2,6 @@ module ApiExample.Endpoint.GetUser where
 
 import ApiExample.Domain (Person)
 import ApiExample.Framework
-import ApiExample.Framework.Types (WithVault, runHandlerX)
 import ApiExample.Infrastructure (findMany'')
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Text (Text)

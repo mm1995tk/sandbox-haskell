@@ -2,11 +2,10 @@ module ApiExample.Endpoint.ListUsers where
 
 import ApiExample.Domain (Person)
 import ApiExample.Framework
-import ApiExample.Framework.Types
 import ApiExample.Infrastructure (findAll)
 import Data.Text (Text)
 import Data.Vector qualified as Vec
-import Servant (FromHttpApiData (parseQueryParam), Get, Header, JSON, QueryParam, Vault, (:>))
+import Servant (FromHttpApiData (parseQueryParam), Get, Header, JSON, QueryParam, (:>))
 
 type ListUser =
   "users"

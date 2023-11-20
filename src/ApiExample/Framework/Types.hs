@@ -2,14 +2,14 @@
 
 module ApiExample.Framework.Types where
 
-import Control.Monad.Reader (ReaderT)
+import ApiExample.Framework.Alias ((:>>))
 import Data.Aeson (Key, ToJSON (..), Value)
 import Data.Text
 import Data.Time.Clock.POSIX (POSIXTime)
 import Data.ULID (ULID)
 import Data.Vault.Lazy qualified as Vault
 import Effectful (Eff, Effect, IOE, liftIO, runEff, (:>))
-import Effectful.Dispatch.Dynamic (interpret, localSeqLift, localSeqUnlift, localUnlift, reinterpret)
+import Effectful.Dispatch.Dynamic (interpret)
 import Effectful.Error.Dynamic (Error, runError)
 import Effectful.Error.Dynamic qualified as Effectful
 import Effectful.Reader.Dynamic
@@ -18,31 +18,23 @@ import GHC.Generics (Generic)
 import Hasql.Session qualified as HSession
 import Hasql.Transaction qualified as Tx
 import Network.Wai (Request)
-import Servant (AuthProtect, Handler, ServerError (ServerError), Vault, err500, runHandler, throwError)
-import Servant.Server (HasServer (ServerT))
+import Servant hiding ((:>))
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData)
-import ApiExample.Framework.Alias ((:>>))
 
 data WrappedHandler :: Effect where
   WrapHandler :: (Handler a) -> WrappedHandler m a
 
 makeEffect ''WrappedHandler
 
-runWrappedHandler :: (IOE :> es, Error ServerError :> es) => Eff (WrappedHandler : es) a -> Eff es (a)
-runWrappedHandler = interpret k
+runWrappedHandler :: (IOE :> es, Error ServerError :> es) => Eff (WrappedHandler : es) a -> Eff es a
+runWrappedHandler = interpret handler
  where
-  k _ (WrapHandler v) = do
-    d <- liftIO $ runHandler v
-    case d of
-      Right v -> return v
-      Left e -> Effectful.throwError e
+  handler _ (WrapHandler h) = liftIO (runHandler h) >>= either Effectful.throwError pure
 
 runHandlerM :: AppCtx -> HandlerM x -> Handler x
-runHandlerM ctx e = do
-  j <- liftIO . runEff . runError @ServerError . runWrappedHandler . runReader ctx $ e
-  case j of
-    Right v -> return v
-    Left _ -> throwError err500
+runHandlerM ctx e = liftIO (run e) >>= either (const $ throwError err500) pure
+ where
+  run = runEff . runError @ServerError . runWrappedHandler . runReader ctx
 
 runHandlerX :: HandlerX a -> Vault.Vault -> HandlerM a
 runHandlerX h v = do

@@ -1,6 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 
-module ApiExample.Framework.Logger (mkLogger, logM, logIO, ) where
+module ApiExample.Framework.Logger (mkLogger, logM, logIO) where
 
 import ApiExample.Framework.Types
 import Control.Monad.Reader hiding (ask)
@@ -10,8 +10,7 @@ import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Text.Encoding (decodeUtf8Lenient)
 import Data.Time.Clock.POSIX (POSIXTime, posixSecondsToUTCTime)
 import Data.ULID (ULID)
-import Data.Vault.Lazy qualified as Vault
-import Effectful.Reader.Dynamic (Reader, ask)
+import Effectful.Reader.Dynamic (ask)
 import Network.Wai (Request (queryString, rawPathInfo, remoteHost, requestMethod))
 
 mkLogger :: Maybe Session -> ULID -> POSIXTime -> Request -> LogLevel -> Logger
@@ -50,4 +49,3 @@ logIO Loggers{..} = \case
   Danger -> danger
   Warning -> warn
   Info -> info
-

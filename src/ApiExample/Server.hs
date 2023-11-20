@@ -4,7 +4,6 @@ module ApiExample.Server (startApp) where
 
 import ApiExample.Endpoint
 import ApiExample.Framework
-import Control.Monad.Reader (ReaderT (runReaderT))
 import Data.Aeson
 import Data.Map qualified as M
 import Data.Text qualified as T
@@ -17,7 +16,6 @@ import Network.Wai.Handler.Warp
 import Servant
 import Servant.Server.Experimental.Auth
 import System.Environment (getEnv)
-import ApiExample.Framework.Types (runHandlerM)
 
 startApp :: IO ()
 startApp = do

@@ -1,8 +1,9 @@
+{-# LANGUAGE OverloadedRecordDot #-}
+
 module ApiExample.Endpoint.CreateUser where
 
 import ApiExample.Domain (Person (..))
-import ApiExample.Framework (transaction)
-import ApiExample.Framework.Types
+import ApiExample.Framework
 import ApiExample.Infrastructure
 import ApiExample.Schema (FullName (FullName), PersonRequest (..))
 import Data.Coerce (coerce)
@@ -23,7 +24,7 @@ handleCreateUser _ PersonRequest{..} = runHandlerX $ do
   ulid <- T.pack . show <$> getULIDM
   maybeUser <- transaction $ do
     users <- findMany' [ulid]
-    case Vec.find (\Person{personId = x} -> x == ulid) users of
+    case Vec.find (\p -> p.personId == ulid) users of
       Just _ -> return Nothing
       Nothing -> do
         let user = Person{personId = ulid, fullName = coerce fullName, age}
