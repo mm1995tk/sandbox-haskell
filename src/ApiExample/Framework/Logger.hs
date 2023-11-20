@@ -1,6 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 
-module ApiExample.Framework.Logger (mkLogger, logM, logIO, getLoggers) where
+module ApiExample.Framework.Logger (mkLogger, logM, logIO, ) where
 
 import ApiExample.Framework.Types
 import Control.Monad.Reader hiding (ask)
@@ -40,9 +40,9 @@ mkLogger s accessId reqAt req loglevel additionalProps' item = BS.putStrLn . enc
   remoteHostAddr = toJSON . show $ remoteHost req
   queryParams = toJSON . show $ queryString req
 
-logM :: Vault.Vault -> LogLevel -> Maybe [(Key, Value)] -> forall a. (Show a, ToJSON a) => a -> HandlerM ()
-logM v level customProps msg = do
-  loggers <- getLoggers v
+logM :: LogLevel -> Maybe [(Key, Value)] -> forall a. (Show a, ToJSON a) => a -> HandlerX ()
+logM level customProps msg = do
+  ReqScopeCtx{loggers} <- ask
   liftIO $ logIO loggers level customProps msg
 
 logIO :: Loggers -> LogLevel -> Logger
@@ -51,9 +51,3 @@ logIO Loggers{..} = \case
   Warning -> warn
   Info -> info
 
-getLoggers :: Vault.Vault -> HandlerM Loggers
-getLoggers v = do
-  ctx <- ask
-  return $ loggers' ctx v
- where
-  loggers' AppCtx{_reqScopeCtx = f} v' = let ReqScopeCtx{loggers} = f v' in loggers

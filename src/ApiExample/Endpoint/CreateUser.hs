@@ -1,7 +1,8 @@
 module ApiExample.Endpoint.CreateUser where
 
 import ApiExample.Domain (Person (..))
-import ApiExample.Framework (CookieAuth, ServerM, transaction)
+import ApiExample.Framework (transaction)
+import ApiExample.Framework.Types
 import ApiExample.Infrastructure
 import ApiExample.Schema (FullName (FullName), PersonRequest (..))
 import Data.Coerce (coerce)
@@ -15,10 +16,11 @@ type CreateUser =
   "users"
     :> CookieAuth
     :> ReqBody '[JSON] PersonRequest
+    :> Vault
     :> Post '[JSON] Person
 
 handleCreateUser :: ServerM CreateUser
-handleCreateUser _ PersonRequest{..} = do
+handleCreateUser _ PersonRequest{..} = runHandlerX $ do
   ulid <- T.pack . show <$> getULIDM
   maybeUser <- transaction $ do
     users <- findMany' [ulid]

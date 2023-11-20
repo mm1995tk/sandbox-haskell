@@ -43,13 +43,20 @@ runHandlerM ctx e = do
     Right v -> return v
     Left _ -> throwError err500
 
+runHandlerX ::  HandlerX a ->Vault.Vault -> HandlerM a
+runHandlerX  h v = do
+  AppCtx{_reqScopeCtx} <- ask
+  runReader (_reqScopeCtx v) h
+
 type ServerM api = ServerT api HandlerM
 
 type HandlerM = Eff '[Reader AppCtx, WrappedHandler, Error ServerError, IOE]
 
-type RunDBIO = forall a. HSession.Session a -> HandlerM a
+type HandlerX = Eff '[Reader ReqScopeCtx, Reader AppCtx, WrappedHandler, Error ServerError, IOE]
 
-type AppTx = forall a. Tx.Transaction a -> HandlerM a
+type RunDBIO = forall a. HSession.Session a -> HandlerX a
+
+type AppTx = forall a. Tx.Transaction a -> HandlerX a
 
 data AppCtx = AppCtx
   { _runDBIO :: RunDBIO

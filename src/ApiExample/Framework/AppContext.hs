@@ -2,14 +2,12 @@ module ApiExample.Framework.AppContext (
   mkAppCtx,
   runDBIO,
   transaction,
-  getAccessId,
-  getReqAt,
   mkReqScopeCtx,
   extractReqScopeCtx,
   extractLoggers,
 ) where
 
-import ApiExample.Framework.Logger (mkLogger)
+import ApiExample.Framework.Logger (logM, mkLogger)
 import ApiExample.Framework.Types
 import Control.Monad (join)
 import Data.Maybe (fromMaybe)
@@ -39,17 +37,17 @@ mkAppCtx vaultKey = do
 
 mkRunnerOfDBIO :: Pool -> RunDBIO
 mkRunnerOfDBIO pool s = do
+  let logDanger = logM Danger Nothing @String
   resultOfSQLQuery <- liftIO $ use pool s
-  -- TODO: きちんとログに出す。エラーから復帰したい場合の処理を考える
-  either (\e -> liftIO (print e) *> throwError err500) pure resultOfSQLQuery
+  either (\e -> logDanger (show e) *> throwError err500) pure resultOfSQLQuery
 
 mkTx :: Pool -> AppTx
 mkTx pool txQuery = do
   resultOfTx <-
     let resultOfTx = use pool $ Txs.transaction Txs.RepeatableRead Txs.Write txQuery
      in liftIO resultOfTx
-  -- TODO: きちんとログに出す。エラーから復帰したい場合の処理を考える
-  either (\e -> liftIO (print e) *> throwError err500) pure resultOfTx
+  let logDanger = logM Danger Nothing @String
+  either (\e -> logDanger (show e) *> throwError err500) pure resultOfTx
 
 mkReqScopeCtx :: Maybe Session -> ULID -> POSIXTime -> Request -> ReqScopeCtx
 mkReqScopeCtx s accessId reqAt req =
@@ -67,27 +65,15 @@ mkReqScopeCtx s accessId reqAt req =
       , info = logger Info
       }
 
-runDBIO :: HSession.Session a -> HandlerM a
+runDBIO :: HSession.Session a -> HandlerX a
 runDBIO s = join $ asks runDBIO' <*> pure s
  where
   runDBIO' AppCtx{_runDBIO} = _runDBIO
 
-transaction :: Tx.Transaction a -> HandlerM a
+transaction :: Tx.Transaction a -> HandlerX a
 transaction s = join $ asks tx' <*> pure s
  where
   tx' AppCtx{_tx} = _tx
-
-getAccessId :: Vault.Vault -> HandlerM ULID
-getAccessId v = do
-  reqScopeCtx <- asks extractReqScopeCtx
-  let ReqScopeCtx{accessId} = reqScopeCtx v
-  return accessId
-
-getReqAt :: Vault.Vault -> HandlerM POSIXTime
-getReqAt v = do
-  reqScopeCtx <- asks extractReqScopeCtx
-  let ReqScopeCtx{reqAt} = reqScopeCtx v
-  return reqAt
 
 extractReqScopeCtx :: AppCtx -> Vault.Vault -> ReqScopeCtx
 extractReqScopeCtx AppCtx{_reqScopeCtx} = _reqScopeCtx
