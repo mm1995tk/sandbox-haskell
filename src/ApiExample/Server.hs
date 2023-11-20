@@ -19,6 +19,8 @@ import Servant
 import Servant.Server.Experimental.Auth
 import System.Environment (getEnv)
 
+type App = API :<|> GraphQL
+
 startApp :: IO ()
 startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
@@ -27,16 +29,16 @@ startApp = do
   appCtx <- mkAppCtx vaultKey
   let middleware = setUp vaultKey vaultAuthKey . logMiddleware appCtx
   let contexts = customFormatters :. authHandler vaultAuthKey :. EmptyContext
-  let app = serveWithContext api contexts $ mkServer appCtx
+  let app = serveWithContext appProxy contexts $ mkServer appCtx
   run port $ middleware app
  where
-  api = Proxy @(API :<|> GraphQL)
+  appProxy = Proxy @App
   authCtx = Proxy @'[AppAuthHandler]
 
-  mkServer :: AppCtx -> Server (API :<|> GraphQL)
+  mkServer :: AppCtx -> Server App
   mkServer appCtx =
     hoistServerWithContext
-      api
+      appProxy
       authCtx
       (runHandlerM appCtx)
       (serverM :<|> handleGql)
