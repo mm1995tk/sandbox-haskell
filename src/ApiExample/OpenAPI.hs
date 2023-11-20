@@ -6,7 +6,6 @@ import ApiExample.Framework.Types
 import Control.Lens
 import Data.ByteString.Lazy.Char8 qualified as BSL8
 import Data.OpenApi
-import Data.Semigroup (sconcat)
 import GHC.IsList (fromList)
 import MyLib.Utils (showText)
 import Servant
