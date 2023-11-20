@@ -12,8 +12,7 @@ type ListUser =
   "users"
     :> Header "user-agent" Text
     :> QueryParam "order-by" OrderBy
-    :> Vault
-    :> Get '[JSON] (Vec.Vector Person)
+    :> WithVault Get '[JSON] (Vec.Vector Person)
 
 handleGetUsers :: ServerM ListUser
 handleGetUsers _ queryParams = runHandlerX $ do

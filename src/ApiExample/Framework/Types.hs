@@ -18,9 +18,10 @@ import GHC.Generics (Generic)
 import Hasql.Session qualified as HSession
 import Hasql.Transaction qualified as Tx
 import Network.Wai (Request)
-import Servant (AuthProtect, Handler, ServerError (ServerError), err500, runHandler, throwError)
+import Servant (AuthProtect, Handler, ServerError (ServerError), Vault, err500, runHandler, throwError)
 import Servant.Server (HasServer (ServerT))
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData)
+import ApiExample.Framework.Alias ((:>>))
 
 data WrappedHandler :: Effect where
   WrapHandler :: (Handler a) -> WrappedHandler m a
@@ -43,8 +44,8 @@ runHandlerM ctx e = do
     Right v -> return v
     Left _ -> throwError err500
 
-runHandlerX ::  HandlerX a ->Vault.Vault -> HandlerM a
-runHandlerX  h v = do
+runHandlerX :: HandlerX a -> Vault.Vault -> HandlerM a
+runHandlerX h v = do
   AppCtx{_reqScopeCtx} <- ask
   runReader (_reqScopeCtx v) h
 
@@ -53,6 +54,8 @@ type ServerM api = ServerT api HandlerM
 type HandlerM = Eff '[Reader AppCtx, WrappedHandler, Error ServerError, IOE]
 
 type HandlerX = Eff '[Reader ReqScopeCtx, Reader AppCtx, WrappedHandler, Error ServerError, IOE]
+
+type WithVault method x y = Vault :>> method x y
 
 type RunDBIO = forall a. HSession.Session a -> HandlerX a
 

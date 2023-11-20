@@ -32,6 +32,7 @@ library
       ApiExample.Endpoint.GetUser
       ApiExample.Endpoint.ListUsers
       ApiExample.Framework
+      ApiExample.Framework.Alias
       ApiExample.Framework.AppContext
       ApiExample.Framework.Logger
       ApiExample.Framework.Security

@@ -16,8 +16,7 @@ type CreateUser =
   "users"
     :> CookieAuth
     :> ReqBody '[JSON] PersonRequest
-    :> Vault
-    :> Post '[JSON] Person
+    :> WithVault Post '[JSON] Person
 
 handleCreateUser :: ServerM CreateUser
 handleCreateUser _ PersonRequest{..} = runHandlerX $ do
