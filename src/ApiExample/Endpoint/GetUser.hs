@@ -3,20 +3,30 @@ module ApiExample.Endpoint.GetUser where
 import ApiExample.Domain (Person)
 import ApiExample.Framework
 import ApiExample.Infrastructure (findMany'')
+import Control.Lens
 import Control.Monad.IO.Class (MonadIO (liftIO))
+import Data.OpenApi (HasDescription (description), OpenApi)
 import Data.Text (Text)
 import Data.Vector qualified as Vec
-import Servant
+import MyLib.Utils (infoSubApi)
+import Servant hiding (IsSubAPI)
+import Servant.OpenApi.Internal.TypeLevel.API (IsSubAPI)
 
-type GetUser =
+type Endpoint =
   "users"
     :> CookieAuth
     :> Header "user-agent" Text
     :> Capture "user-id" Text
     :> Get '[JSON] Person
 
-handleGetUser :: ServerM GetUser
-handleGetUser Session{userName} _ uid = do
+openapiEndpointInfo :: forall api. (IsSubAPI Endpoint api) => Proxy api -> (OpenApi -> OpenApi)
+openapiEndpointInfo = infoSubApi @Endpoint @api Proxy $ description' . sec
+ where
+  description' = description ?~ "find user"
+  sec = securityRequirements [[(Bearer, [])]]
+
+handler :: ServerM Endpoint
+handler Session{userName} _ uid = do
   liftIO $ print userName
   users <- runDBIO $ findMany'' [uid]
   if Vec.null users

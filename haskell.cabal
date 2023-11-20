@@ -38,6 +38,7 @@ library
       ApiExample.Framework.Types
       ApiExample.Infrastructure
       ApiExample.Infrastructure.Aggregate.Person
+      ApiExample.OpenAPI
       ApiExample.Schema
       ApiExample.Server
       Examples.AsyncExample
@@ -89,12 +90,15 @@ library
     , hasql-pool
     , hasql-th
     , hasql-transaction
+    , http-media
     , lens
     , lens-aeson
     , monad-par
     , mtl
+    , openapi3
     , profunctors
     , safe-exceptions
+    , servant-openapi3
     , servant-server
     , stm
     , text
@@ -145,12 +149,15 @@ executable haskell-exe
     , hasql-pool
     , hasql-th
     , hasql-transaction
+    , http-media
     , lens
     , lens-aeson
     , monad-par
     , mtl
+    , openapi3
     , profunctors
     , safe-exceptions
+    , servant-openapi3
     , servant-server
     , stm
     , text
@@ -210,12 +217,15 @@ test-suite haskell-test
     , hasql-transaction
     , hspec
     , hspec-wai
+    , http-media
     , lens
     , lens-aeson
     , monad-par
     , mtl
+    , openapi3
     , profunctors
     , safe-exceptions
+    , servant-openapi3
     , servant-server
     , stm
     , tasty

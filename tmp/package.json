@@ -2,10 +2,17 @@
   "name": "haskell",
   "module": "index.ts",
   "type": "module",
+  "scripts": {
+    "gen": "openapi-typescript ../openapi.json -o p.ts"
+  },
   "devDependencies": {
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "openapi-typescript": "^6.7.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.8.1"
   }
 }

@@ -1,23 +1,18 @@
-const url = "http://127.0.0.1:8081/users";
+import createClient from "openapi-fetch";
+import { paths } from "./p";
 
-const json = { fullName: "0", age: 30 };
+const url = "http://127.0.0.1:8080";
 
-const f = async () => {
-  await fetch(url).then(async r => console.log(await r.text()));
-};
+const openapiClient = createClient<paths>({ baseUrl: url });
 
-await Promise.all([
-  f(),
-  //  f(), f(), f(), f(), f()
-]);
+const r = await openapiClient.GET("/users/{user-id}", {
+  params: {
+    path: { "user-id": "01HE8J6FXQNK3V36RNZGVH95MX" },
+  },
+});
 
-// await fetch(url, {
-//   method: "POST",
-//   body: JSON.stringify(json),
-//   headers: {
-//     Cookie: "session-id=poipoi-x",
-//     "Content-Type": "application/json",
-//   },
-// }).then(async r => {
-//   console.log(await r.text());
-// });
+if (r.data) {
+  console.log(r.data);
+} else {
+  console.log(r.error);
+}

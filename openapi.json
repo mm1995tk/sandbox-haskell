@@ -1,0 +1,251 @@
+{
+  "components": {
+    "schemas": {
+      "FullName": {
+        "example": "namenamename",
+        "minLength": 4,
+        "type": "string"
+      },
+      "Http401ErrorRespBody": {
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["message"],
+        "type": "object"
+      },
+      "Person": {
+        "properties": {
+          "age": {
+            "maximum": 9223372036854775807,
+            "minimum": -9223372036854775808,
+            "type": "integer"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "personId": {
+            "type": "string"
+          }
+        },
+        "required": ["personId", "age", "fullName"],
+        "type": "object"
+      },
+      "PersonRequest": {
+        "example": {
+          "age": 30,
+          "fullName": "person-name"
+        },
+        "properties": {
+          "age": {
+            "maximum": 9223372036854775807,
+            "minimum": -9223372036854775808,
+            "type": "integer"
+          },
+          "fullName": {
+            "$ref": "#/components/schemas/FullName"
+          }
+        },
+        "required": ["fullName", "age"],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "description": "サンプル",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "This is an API",
+    "license": {
+      "name": "MIT"
+    },
+    "title": "Sandbox API",
+    "version": "1.0"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/users": {
+      "get": {
+        "description": "list user",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "user-agent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "order-by",
+            "required": false,
+            "schema": {
+              "description": "sort asc or desc",
+              "enum": ["asc", "desc"],
+              "title": "order-by",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json;charset=utf-8": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Person"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid `order-by` or `user-agent`"
+          }
+        },
+        "tags": ["ReadAPI"]
+      },
+      "post": {
+        "description": "create user",
+        "parameters": [
+          {
+            "description": "session-id",
+            "in": "cookie",
+            "name": "session-id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json;charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json;charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid `body`"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Http401ErrorRespBody"
+                }
+              }
+            },
+            "description": "description401"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["WriteAPI"]
+      }
+    },
+    "/users/{user-id}": {
+      "get": {
+        "description": "find user",
+        "parameters": [
+          {
+            "description": "session-id",
+            "in": "cookie",
+            "name": "session-id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "user-agent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "user-id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json;charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid `user-agent`"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Http401ErrorRespBody"
+                }
+              }
+            },
+            "description": "description401"
+          },
+          "404": {
+            "description": "`user-id` not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["ReadAPI"]
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://example.com"
+    }
+  ],
+  "tags": [
+    {
+      "description": "all except read in crud",
+      "name": "WriteAPI"
+    },
+    {
+      "description": "read in crud",
+      "name": "ReadAPI"
+    }
+  ]
+}

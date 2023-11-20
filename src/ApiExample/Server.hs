@@ -4,6 +4,7 @@ module ApiExample.Server (startApp) where
 
 import ApiExample.Endpoint
 import ApiExample.Framework
+import ApiExample.Framework.Types (Http401ErrorRespBody (..))
 import Control.Monad.Reader (ReaderT (runReaderT))
 import Data.Aeson
 import Data.Map qualified as M
@@ -46,7 +47,7 @@ authHandler vskey = mkAuthHandler handler
   handler req = case Vault.lookup vskey (vault req) of
     Just (Just session) -> return session
     Nothing -> throwError err500
-    _ -> throwError err401
+    _ -> throwError err401{errBody = encode $ toJSON Http401ErrorRespBody{message = "no session"}}
 
 setUp :: Vault.Key ReqScopeCtx -> Vault.Key (Maybe Session) -> Middleware
 setUp vkey vskey app req res = do
