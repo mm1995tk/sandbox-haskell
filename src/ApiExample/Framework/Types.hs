@@ -30,6 +30,7 @@ import Servant  hiding ((:>))
 import Servant.OpenApi.Internal
 import Servant.Server (HasServer (ServerT))
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData)
+import Hasql.Pool (UsageError)
 
 data WrappedHandler :: Effect where
   WrapHandler :: (Handler a) -> WrappedHandler m a
@@ -72,6 +73,7 @@ data AppCtx = AppCtx
   { _runDBIO :: RunDBIO
   , _tx :: AppTx
   , _reqScopeCtx :: Vault.Vault -> ReqScopeCtx
+  , runDBIO' :: forall a. HSession.Session a -> IO (Either UsageError a)
   }
 
 type Cookies = [(Text, Text)]

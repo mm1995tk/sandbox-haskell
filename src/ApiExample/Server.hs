@@ -3,6 +3,7 @@
 module ApiExample.Server (startApp) where
 
 import ApiExample.Endpoint
+import ApiExample.Endpoint.GraphQL (GraphQL, handleGql)
 import ApiExample.Framework
 import ApiExample.Framework.Types (Http401ErrorRespBody (..))
 import Control.Monad.Reader (ReaderT (runReaderT))
@@ -30,16 +31,16 @@ startApp = do
   let app = serveWithContext api contexts $ mkServer appCtx
   run port $ middleware app
  where
-  api = Proxy @API
+  api = Proxy @(API :<|> GraphQL)
   authCtx = Proxy @'[AppAuthHandler]
 
-  mkServer :: AppCtx -> Server API
+  mkServer :: AppCtx -> Server (API :<|> GraphQL)
   mkServer appCtx =
     hoistServerWithContext
       api
       authCtx
       (runHandlerM appCtx)
-      serverM
+      (serverM :<|> handleGql)
 
 authHandler :: Vault.Key (Maybe Session) -> AppAuthHandler
 authHandler vskey = mkAuthHandler handler

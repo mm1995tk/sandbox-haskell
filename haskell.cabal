@@ -30,6 +30,7 @@ library
       ApiExample.Endpoint
       ApiExample.Endpoint.CreateUser
       ApiExample.Endpoint.GetUser
+      ApiExample.Endpoint.GraphQL
       ApiExample.Endpoint.ListUsers
       ApiExample.Framework
       ApiExample.Framework.Alias
@@ -37,6 +38,7 @@ library
       ApiExample.Framework.Logger
       ApiExample.Framework.Security
       ApiExample.Framework.Types
+      ApiExample.GraphQL.API
       ApiExample.Infrastructure
       ApiExample.Infrastructure.Aggregate.Person
       ApiExample.OpenAPI
@@ -87,14 +89,17 @@ library
     , effectful-core
     , effectful-plugin
     , effectful-th
+    , hashable
     , hasql
     , hasql-pool
     , hasql-th
     , hasql-transaction
+    , haxl
     , http-media
     , lens
     , lens-aeson
     , monad-par
+    , morpheus-graphql
     , mtl
     , openapi3
     , profunctors
@@ -145,15 +150,18 @@ executable haskell-exe
     , effectful-core
     , effectful-plugin
     , effectful-th
+    , hashable
     , haskell
     , hasql
     , hasql-pool
     , hasql-th
     , hasql-transaction
+    , haxl
     , http-media
     , lens
     , lens-aeson
     , monad-par
+    , morpheus-graphql
     , mtl
     , openapi3
     , profunctors
@@ -211,17 +219,20 @@ test-suite haskell-test
     , effectful-core
     , effectful-plugin
     , effectful-th
+    , hashable
     , haskell
     , hasql
     , hasql-pool
     , hasql-th
     , hasql-transaction
+    , haxl
     , hspec
     , hspec-wai
     , http-media
     , lens
     , lens-aeson
     , monad-par
+    , morpheus-graphql
     , mtl
     , openapi3
     , profunctors

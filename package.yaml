@@ -41,6 +41,11 @@ dependencies:
   - profunctors
   - unix
 
+  - morpheus-graphql
+  - haxl
+  - hashable
+  - http-media
+
   - servant-server
   - wai
   - warp
