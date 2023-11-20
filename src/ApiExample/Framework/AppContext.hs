@@ -65,12 +65,12 @@ mkReqScopeCtx s accessId reqAt req =
       , info = logger Info
       }
 
-runDBIO :: HSession.Session a -> HandlerX a
+runDBIO :: HSession.Session a -> HandlerWithReqScopeCtx a
 runDBIO s = join $ asks runDBIO' <*> pure s
  where
   runDBIO' AppCtx{_runDBIO} = _runDBIO
 
-transaction :: Tx.Transaction a -> HandlerX a
+transaction :: Tx.Transaction a -> HandlerWithReqScopeCtx a
 transaction s = join $ asks tx' <*> pure s
  where
   tx' AppCtx{_tx} = _tx

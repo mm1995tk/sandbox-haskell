@@ -14,7 +14,7 @@ type ListUser =
     :> WithVault Get '[JSON] (Vec.Vector Person)
 
 handleGetUsers :: ServerM ListUser
-handleGetUsers _ queryParams = runHandlerX $ do
+handleGetUsers _ queryParams = runReaderReqScopeCtx $ do
   let logInfo = logM Info
 
   case queryParams of

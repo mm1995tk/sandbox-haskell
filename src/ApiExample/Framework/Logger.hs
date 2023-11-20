@@ -39,7 +39,7 @@ mkLogger s accessId reqAt req loglevel additionalProps' item = BS.putStrLn . enc
   remoteHostAddr = toJSON . show $ remoteHost req
   queryParams = toJSON . show $ queryString req
 
-logM :: LogLevel -> Maybe [(Key, Value)] -> forall a. (Show a, ToJSON a) => a -> HandlerX ()
+logM :: LogLevel -> Maybe [(Key, Value)] -> forall a. (Show a, ToJSON a) => a -> HandlerWithReqScopeCtx ()
 logM level customProps msg = do
   ReqScopeCtx{loggers} <- ask
   liftIO $ logIO loggers level customProps msg

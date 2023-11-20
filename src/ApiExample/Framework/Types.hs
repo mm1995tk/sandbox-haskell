@@ -31,27 +31,32 @@ runWrappedHandler = interpret handler
  where
   handler _ (WrapHandler h) = liftIO (runHandler h) >>= either Effectful.throwError pure
 
-runHandlerM :: AppCtx -> HandlerM x -> Handler x
+runHandlerM :: AppCtx -> HandlerM a -> Handler a
 runHandlerM ctx e = liftIO (run e) >>= either (const $ throwError err500) pure
  where
   run = runEff . runError @ServerError . runWrappedHandler . runReader ctx
 
-runHandlerX :: HandlerX a -> Vault.Vault -> HandlerM a
-runHandlerX h v = do
+runReaderReqScopeCtx :: HandlerWithReqScopeCtx a -> Vault.Vault -> HandlerM a
+runReaderReqScopeCtx h v = do
   AppCtx{_reqScopeCtx} <- ask
   runReader (_reqScopeCtx v) h
 
+runReaderReqScopeCtx' :: Vault -> HandlerWithReqScopeCtx a -> HandlerM a
+runReaderReqScopeCtx' = flip runReaderReqScopeCtx
+
 type ServerM api = ServerT api HandlerM
 
-type HandlerM = Eff '[Reader AppCtx, WrappedHandler, Error ServerError, IOE]
+type BaseEffectStack = '[Reader AppCtx, WrappedHandler, Error ServerError, IOE]
 
-type HandlerX = Eff '[Reader ReqScopeCtx, Reader AppCtx, WrappedHandler, Error ServerError, IOE]
+type HandlerM = Eff BaseEffectStack
+
+type HandlerWithReqScopeCtx = Eff (Reader ReqScopeCtx : BaseEffectStack)
 
 type WithVault method x y = Vault :>> method x y
 
-type RunDBIO = forall a. HSession.Session a -> HandlerX a
+type RunDBIO = forall a. HSession.Session a -> HandlerWithReqScopeCtx a
 
-type AppTx = forall a. Tx.Transaction a -> HandlerX a
+type AppTx = forall a. Tx.Transaction a -> HandlerWithReqScopeCtx a
 
 data AppCtx = AppCtx
   { _runDBIO :: RunDBIO

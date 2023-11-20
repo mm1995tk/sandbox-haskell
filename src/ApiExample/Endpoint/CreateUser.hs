@@ -20,7 +20,7 @@ type CreateUser =
     :> WithVault Post '[JSON] Person
 
 handleCreateUser :: ServerM CreateUser
-handleCreateUser _ PersonRequest{..} = runHandlerX $ do
+handleCreateUser _ PersonRequest{..} = runReaderReqScopeCtx $ do
   ulid <- T.pack . show <$> getULIDM
   maybeUser <- transaction $ do
     users <- findMany' [ulid]

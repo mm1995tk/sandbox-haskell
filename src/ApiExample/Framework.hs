@@ -24,5 +24,6 @@ import ApiExample.Framework.Types as Types (
   Session (..),
   WithVault,
   runHandlerM,
-  runHandlerX,
+  runReaderReqScopeCtx,
+  runReaderReqScopeCtx',
  )
