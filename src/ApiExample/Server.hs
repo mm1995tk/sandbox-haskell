@@ -38,7 +38,7 @@ startApp = do
     hoistServerWithContext
       api
       authCtx
-      (`runReaderT` appCtx)
+      (runHandlerM appCtx)
       serverM
 
 authHandler :: Vault.Key (Maybe Session) -> AppAuthHandler

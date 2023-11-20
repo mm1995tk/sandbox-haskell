@@ -10,15 +10,14 @@ import Data.Proxy (Proxy (..))
 import Data.Text (Text)
 import Data.Vector qualified as Vec
 import MyLib.Utils (infoSubApi)
-import Servant (Get, Header, JSON, QueryParam, Vault, (:>))
+import Servant (Get, Header, JSON, QueryParam, (:>))
 import Servant.OpenApi.Internal.TypeLevel (IsSubAPI)
 
 type Endpoint =
   "users"
-    :> Vault
     :> Header "user-agent" Text
     :> QueryParam "order-by" OrderBy
-    :> Get '[JSON] (Vec.Vector Person)
+    :> WithVault Get '[JSON] (Vec.Vector Person)
 
 openapiEndpointInfo :: forall api. (IsSubAPI Endpoint api) => Proxy api -> (OpenApi -> OpenApi)
 openapiEndpointInfo = infoSubApi @Endpoint @api Proxy description'
@@ -26,8 +25,8 @@ openapiEndpointInfo = infoSubApi @Endpoint @api Proxy description'
   description' = description ?~ "list user"
 
 handler :: ServerM Endpoint
-handler v _ queryParams = do
-  let logInfo = logM v Info
+handler _ queryParams = runReaderReqScopeCtx $ do
+  let logInfo = logM Info
 
   case queryParams of
     Nothing -> logInfo (Just [("custom", "xxx"), ("accessId", "xxx")]) @Text "none"
