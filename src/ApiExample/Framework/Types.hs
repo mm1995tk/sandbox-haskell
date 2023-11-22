@@ -30,6 +30,7 @@ import Network.Wai (Request)
 import Servant hiding ((:>))
 import Servant.OpenApi.Internal
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData)
+import ApiExample.Config.Key (keyOfSessionId)
 
 data WrappedHandler :: Effect where
   WrapHandler :: (Handler a) -> WrappedHandler m a
@@ -90,14 +91,8 @@ instance ToSchema Http401ErrorRespBody where
     type' = (type_ ?~ OpenApiObject) . (properties .~ fromList [("message", toSchemaRef (Proxy @Text))])
 
 instance (HasOpenApi a) => HasOpenApi (CookieAuth :>> a) where
-  toOpenApi _ = toOpenApi (Proxy @a) & addDefaultResponse401 "session-id" & addParam param
+  toOpenApi _ = toOpenApi (Proxy @a) & addDefaultResponse401 keyOfSessionId
    where
-    param =
-      mempty
-        & name .~ "session-id"
-        & description ?~ "session-id"
-        & in_ .~ ParamCookie
-        & schema ?~ Inline (mempty & type_ ?~ OpenApiString)
     addDefaultResponse401 pname = setResponseWith (\old _new -> alter401 old) 401 (return response401)
      where
       sname = markdownCode pname

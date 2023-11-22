@@ -21,6 +21,7 @@ import Servant
 import Servant.Server.Experimental.Auth
 import Servant.Server.Internal.ServerError (responseServerError)
 import System.Environment (getEnv)
+import ApiExample.Config.Key (keyOfSessionId)
 
 type App = API :<|> GraphQL
 
@@ -58,7 +59,7 @@ setUp :: Vault.Key ReqScopeCtx -> Vault.Key (Maybe Session) -> Middleware
 setUp vkey vskey app req res = do
   reqAt <- getPOSIXTime
   accessId <- getULIDTime reqAt
-  let s = extractCookies req >>= M.lookup "session-id" >>= findSession
+  let s = extractCookies req >>= M.lookup keyOfSessionId >>= findSession
   let vault' = Vault.insert vkey (mkReqScopeCtx s accessId reqAt req) (vault req)
   let vault'' = Vault.insert vskey s vault'
   app req{vault = vault''} res

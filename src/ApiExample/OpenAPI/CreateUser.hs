@@ -27,7 +27,7 @@ openapiEndpointInfo :: forall api. (IsSubAPI Endpoint api) => Proxy api -> (Open
 openapiEndpointInfo = infoSubApi @Endpoint @api Proxy $ description' . sec
  where
   description' = description ?~ "create user"
-  sec = securityRequirements [[(Bearer, [])]]
+  sec = securityRequirements [[(Cookie, [])]]
 
 handler :: ServerM Endpoint
 handler _ PersonRequest{..} = runReaderReqScopeCtx $ do

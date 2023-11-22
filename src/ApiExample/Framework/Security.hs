@@ -21,10 +21,10 @@ parseCookies cookieText =
   toTuple [key, value] = (key, value)
   toTuple _ = error "Invalid cookie string format"
 
-data SecuritySchemeKey = Bearer
+data SecuritySchemeKey = Cookie
 
 instance Show SecuritySchemeKey where
-  show Bearer = "bearer"
+  show Cookie = "cookie"
 
 securityRequirements :: (HasSecurity t [SecurityRequirement]) => [[(SecuritySchemeKey, [T.Text])]] -> t -> t
 securityRequirements xs = security .~ f xs

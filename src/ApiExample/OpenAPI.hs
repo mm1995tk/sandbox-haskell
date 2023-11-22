@@ -8,6 +8,7 @@ module ApiExample.OpenAPI (
   outputDoc,
 ) where
 
+import ApiExample.Config.Key (keyOfSessionId)
 import ApiExample.Domain (Person)
 import ApiExample.Framework.Security
 import ApiExample.Framework.Types
@@ -74,5 +75,5 @@ openapi' =
     & openapiEndpointInfo
  where
   defs =
-    [ (showText Bearer, SecurityScheme (SecuritySchemeHttp (HttpSchemeBearer Nothing)) (Just "サンプル"))
+    [ (showText Cookie, SecurityScheme (SecuritySchemeApiKey (ApiKeyParams keyOfSessionId ApiKeyCookie)) (Just "サンプル"))
     ]

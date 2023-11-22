@@ -52,10 +52,11 @@
       }
     },
     "securitySchemes": {
-      "bearer": {
+      "cookie": {
         "description": "サンプル",
-        "scheme": "bearer",
-        "type": "http"
+        "in": "cookie",
+        "name": "session-id",
+        "type": "apiKey"
       }
     }
   },
@@ -115,16 +116,6 @@
       },
       "post": {
         "description": "create user",
-        "parameters": [
-          {
-            "description": "session-id",
-            "in": "cookie",
-            "name": "session-id",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json;charset=utf-8": {
@@ -161,7 +152,7 @@
         },
         "security": [
           {
-            "bearer": []
+            "cookie": []
           }
         ],
         "tags": ["WriteAPI"]
@@ -171,14 +162,6 @@
       "get": {
         "description": "find user",
         "parameters": [
-          {
-            "description": "session-id",
-            "in": "cookie",
-            "name": "session-id",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "in": "header",
             "name": "user-agent",
@@ -226,7 +209,7 @@
         },
         "security": [
           {
-            "bearer": []
+            "cookie": []
           }
         ],
         "tags": ["ReadAPI"]
