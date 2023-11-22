@@ -41,3 +41,20 @@ handler _ PersonRequest{..} = runReaderReqScopeCtx $ do
         insertUser user
         return $ Just user
   maybe (throwError err404) return maybeUser
+
+
+-- Handler全体をトランザクションで囲む
+-- import ApiExample.Framework.Types (runTx, raiseTransaction)
+
+-- handler :: ServerM Endpoint
+-- handler _ PersonRequest{..} = runReaderReqScopeCtx . runTx $ do
+--   ulid <- T.pack . show <$> getULIDM
+--   users <- raiseTransaction $ findMany' [ulid]
+--   case Vec.find (\p -> p.personId == ulid) users of
+--     Just _ -> throwError err404
+--     Nothing -> do
+--       let user = Person{personId = ulid, fullName = coerce fullName, age}
+--       raiseTransaction $ insertUser user
+--       return user
+
+

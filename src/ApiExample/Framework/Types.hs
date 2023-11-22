@@ -2,12 +2,14 @@
 
 module ApiExample.Framework.Types where
 
+import ApiExample.Config.Key (keyOfSessionId)
 import ApiExample.Framework.Alias ((:>>))
 import Control.Lens ((%~), (.~), (?~))
 import Control.Lens.Lens ((&))
+import Control.Monad (join)
 import Data.Aeson (Key, ToJSON (..), Value)
 import Data.Data (Typeable)
-import Data.OpenApi (HasProperties (properties), OpenApiType (OpenApiObject, OpenApiString), ParamLocation (..), Referenced (..), content, description, in_, name, schema, type_)
+import Data.OpenApi (HasProperties (properties), OpenApiType (OpenApiObject), content, description, schema, type_)
 import Data.OpenApi.Operation
 import Data.OpenApi.Schema
 import Data.Text
@@ -30,12 +32,16 @@ import Network.Wai (Request)
 import Servant hiding ((:>))
 import Servant.OpenApi.Internal
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData)
-import ApiExample.Config.Key (keyOfSessionId)
 
 data WrappedHandler :: Effect where
   WrapHandler :: (Handler a) -> WrappedHandler m a
 
 makeEffect ''WrappedHandler
+
+data RaiseTransaction :: Effect where
+  RaiseTransaction :: (Tx.Transaction a) -> RaiseTransaction m a
+
+makeEffect ''RaiseTransaction
 
 runWrappedHandler :: (IOE :> es, Error ServerError :> es) => Eff (WrappedHandler : es) a -> Eff es a
 runWrappedHandler = interpret handler
@@ -55,6 +61,12 @@ runReaderReqScopeCtx h v = do
 runReaderReqScopeCtx' :: Vault -> HandlerWithReqScopeCtx a -> HandlerM a
 runReaderReqScopeCtx' = flip runReaderReqScopeCtx
 
+runTx :: TxHandler a -> HandlerWithReqScopeCtx a
+runTx = interpret handler
+ where
+  handler _ (RaiseTransaction tx) = transaction tx
+  transaction s = join $ asks tx' <*> pure s where tx' AppCtx{_tx} = _tx
+
 type ServerM api = ServerT api HandlerM
 
 type BaseEffectStack = '[Reader AppCtx, WrappedHandler, Error ServerError, IOE]
@@ -62,6 +74,8 @@ type BaseEffectStack = '[Reader AppCtx, WrappedHandler, Error ServerError, IOE]
 type HandlerM = Eff BaseEffectStack
 
 type HandlerWithReqScopeCtx = Eff (Reader ReqScopeCtx : BaseEffectStack)
+
+type TxHandler = Eff (RaiseTransaction : Reader ReqScopeCtx : BaseEffectStack)
 
 type WithVault method x y = Vault :>> method x y
 
