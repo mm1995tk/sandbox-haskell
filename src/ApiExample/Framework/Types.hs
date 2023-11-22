@@ -22,15 +22,14 @@ import Effectful.Reader.Dynamic
 import Effectful.TH (makeEffect)
 import GHC.Generics (Generic)
 import GHC.IsList (IsList (fromList))
+import Hasql.Pool (UsageError)
 import Hasql.Session qualified as HSession
 import Hasql.Transaction qualified as Tx
 import Network.HTTP.Media ((//))
 import Network.Wai (Request)
-import Servant  hiding ((:>))
+import Servant hiding ((:>))
 import Servant.OpenApi.Internal
-import Servant.Server (HasServer (ServerT))
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData)
-import Hasql.Pool (UsageError)
 
 data WrappedHandler :: Effect where
   WrapHandler :: (Handler a) -> WrappedHandler m a
@@ -43,7 +42,7 @@ runWrappedHandler = interpret handler
   handler _ (WrapHandler h) = liftIO (runHandler h) >>= either Effectful.throwError pure
 
 runHandlerM :: AppCtx -> HandlerM a -> Handler a
-runHandlerM ctx e = liftIO (run e) >>= either (const $ throwError err500) pure
+runHandlerM ctx e = liftIO (run e) >>= either (throwError . snd) pure
  where
   run = runEff . runError @ServerError . runWrappedHandler . runReader ctx
 
