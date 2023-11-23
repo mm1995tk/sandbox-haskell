@@ -88,24 +88,6 @@ data AppCtx = AppCtx
   , runDBIO' :: forall a. HSession.Session a -> IO (Either UsageError a)
   }
 
-data Session = Session {userName :: Text, email :: Text}
-
-type CookieAuth = AuthProtect "cookie"
-
-instance (HasOpenApi a) => HasOpenApi (CookieAuth :>> a) where
-  toOpenApi _ = toOpenApi (Proxy @a) & addDefaultResponse401 keyOfSessionId
-   where
-    addDefaultResponse401 pname = setResponseWith (\old _new -> alter401 old) 401 (return response401)
-     where
-      sname = markdownCode pname
-      alter401 = description %~ (<> (" or " <> sname))
-      response401 = mempty & (description .~ "description401") . (content .~ fromList [("application" // "json", mediaTypeObj)])
-      mediaTypeObj = mempty & schema ?~ toSchemaRef (Proxy @Http401ErrorRespBody)
-
-type instance AuthServerData CookieAuth = Session
-
-type AppAuthHandler = AuthHandler Request Session
-
 data ReqScopeCtx = ReqScopeCtx
   { accessId :: ULID
   , reqAt :: POSIXTime

@@ -2,6 +2,7 @@
 
 module ApiExample.Framework.Logger (mkLogger, logM, logIO) where
 
+import ApiExample.Framework.Security
 import ApiExample.Framework.Server
 import Control.Monad.Reader hiding (ask)
 import Data.Aeson

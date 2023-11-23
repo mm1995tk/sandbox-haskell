@@ -8,6 +8,7 @@ module ApiExample.Framework.AppContext (
 ) where
 
 import ApiExample.Framework.Logger (logM, mkLogger)
+import ApiExample.Framework.Security (Session)
 import ApiExample.Framework.Server
 import Control.Monad (join)
 import Data.Maybe (fromMaybe)

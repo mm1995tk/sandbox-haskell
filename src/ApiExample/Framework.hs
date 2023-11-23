@@ -1,5 +1,5 @@
 module ApiExample.Framework (
-  module Types,
+  module Server,
   module Sec,
   module AppContext,
   module Logger,
@@ -11,11 +11,9 @@ import ApiExample.Framework.AppContext as AppContext
 import ApiExample.Framework.Http as Http
 import ApiExample.Framework.Logger as Logger
 import ApiExample.Framework.Security as Sec
-import ApiExample.Framework.Server as Types (
-  AppAuthHandler,
+import ApiExample.Framework.Server as Server (
   AppCtx,
   AppTx,
-  CookieAuth,
   HandlerM,
   LogLevel (..),
   Logger,
@@ -23,7 +21,6 @@ import ApiExample.Framework.Server as Types (
   ReqScopeCtx,
   RunDBIO,
   ServerM,
-  Session (..),
   raiseTransaction,
   runHandlerM,
   runReaderReqScopeCtx,
