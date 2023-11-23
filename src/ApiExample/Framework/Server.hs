@@ -2,16 +2,8 @@
 
 module ApiExample.Framework.Server where
 
-import ApiExample.Config.Key (keyOfSessionId)
-import ApiExample.Framework.Alias ((:>>))
-import ApiExample.Framework.Http (Http401ErrorRespBody)
-import Control.Lens ((%~), (.~), (?~))
-import Control.Lens.Lens ((&))
 import Control.Monad (join)
 import Data.Aeson (Key, ToJSON (..), Value)
-import Data.OpenApi (content, description, schema)
-import Data.OpenApi.Operation
-import Data.OpenApi.Schema
 import Data.Text
 import Data.Time.Clock.POSIX (POSIXTime)
 import Data.ULID (ULID)
@@ -23,15 +15,10 @@ import Effectful.Error.Dynamic qualified as Effectful
 import Effectful.Reader.Dynamic
 import Effectful.TH (makeEffect)
 import GHC.Generics (Generic)
-import GHC.IsList (IsList (fromList))
 import Hasql.Pool (UsageError)
 import Hasql.Session qualified as HSession
 import Hasql.Transaction qualified as Tx
-import Network.HTTP.Media ((//))
-import Network.Wai (Request)
 import Servant hiding ((:>))
-import Servant.OpenApi.Internal
-import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData)
 
 data WrappedHandler :: Effect where
   WrapHandler :: (Handler a) -> WrappedHandler m a
