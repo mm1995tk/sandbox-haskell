@@ -2,23 +2,33 @@
 
 module ApiExample.Framework.Server where
 
+import ApiExample.Framework.Security (Session (..))
 import Control.Monad (join)
-import Data.Aeson (Key, ToJSON (..), Value)
+import Data.Aeson (Key, ToJSON (..), Value, encode)
+import Data.Aeson.KeyMap (KeyMap)
+import Data.ByteString.Lazy.Char8 qualified as BS
+import Data.Maybe (fromMaybe)
 import Data.Text
-import Data.Time.Clock.POSIX (POSIXTime)
+import Data.Text.Encoding (decodeUtf8Lenient)
+import Data.Time.Clock.POSIX (POSIXTime, posixSecondsToUTCTime)
 import Data.ULID (ULID)
 import Data.Vault.Lazy qualified as Vault
 import Effectful (Eff, Effect, IOE, liftIO, runEff, (:>))
 import Effectful.Dispatch.Dynamic (interpret)
-import Effectful.Error.Dynamic (Error, runError)
+import Effectful.Error.Dynamic (Error, runError, throwError)
 import Effectful.Error.Dynamic qualified as Effectful
 import Effectful.Reader.Dynamic
 import Effectful.TH (makeEffect)
 import GHC.Generics (Generic)
-import Hasql.Pool (UsageError)
+import GHC.IsList (fromList)
+import Hasql.Pool (Pool, UsageError, use)
 import Hasql.Session qualified as HSession
 import Hasql.Transaction qualified as Tx
-import Servant hiding ((:>))
+import Hasql.Transaction.Sessions qualified as Txs
+import MyLib.Support (getPool)
+import Network.Wai (Request (queryString, rawPathInfo, remoteHost, requestMethod))
+import Servant hiding (throwError, (:>))
+import Servant qualified
 
 data WrappedHandler :: Effect where
   WrapHandler :: (Handler a) -> WrappedHandler m a
@@ -36,7 +46,7 @@ runWrappedHandler = interpret handler
   handler _ (WrapHandler h) = liftIO (runHandler h) >>= either Effectful.throwError pure
 
 runHandlerM :: AppCtx -> HandlerM a -> Handler a
-runHandlerM ctx e = liftIO (run e) >>= either (throwError . snd) pure
+runHandlerM ctx e = liftIO (run e) >>= either (Servant.throwError . snd) pure
  where
   run = runEff . runError @ServerError . runWrappedHandler . runReader ctx
 
@@ -52,7 +62,6 @@ runTx :: TxHandler a -> HandlerWithReqScopeCtx a
 runTx = interpret handler
  where
   handler _ (RaiseTransaction tx) = transaction tx
-  transaction s = join $ asks tx' <*> pure s where tx' AppCtx{_tx} = _tx
 
 type ServerM api = ServerT api HandlerM
 
@@ -95,3 +104,97 @@ instance ToJSON LogLevel where
   toJSON Danger = toJSON @Text "danger"
   toJSON Warning = toJSON @Text "warning"
   toJSON Info = toJSON @Text "info"
+
+mkAppCtx :: Vault.Key ReqScopeCtx -> IO AppCtx
+mkAppCtx vaultKey = do
+  pool <- getPool
+  return
+    AppCtx
+      { _runDBIO = mkRunnerOfDBIO pool
+      , runDBIO' = use pool
+      , _tx = mkTx pool
+      , _reqScopeCtx = fromMaybe (error "the vault key is not found.") . Vault.lookup vaultKey
+      }
+
+mkRunnerOfDBIO :: Pool -> RunDBIO
+mkRunnerOfDBIO pool s = do
+  let logDanger = logM Danger Nothing @String
+  resultOfSQLQuery <- liftIO $ use pool s
+  either (\e -> logDanger (show e) *> throwError err500) pure resultOfSQLQuery
+
+mkTx :: Pool -> AppTx
+mkTx pool txQuery = do
+  resultOfTx <-
+    let resultOfTx = use pool $ Txs.transaction Txs.RepeatableRead Txs.Write txQuery
+     in liftIO resultOfTx
+  let logDanger = logM Danger Nothing @String
+  either (\e -> logDanger (show e) *> throwError err500) pure resultOfTx
+
+mkReqScopeCtx :: Maybe Session -> ULID -> POSIXTime -> Request -> ReqScopeCtx
+mkReqScopeCtx s accessId reqAt req =
+  ReqScopeCtx
+    { accessId
+    , reqAt
+    , loggers = mkLoggers (mkLogger s accessId reqAt req)
+    }
+ where
+  mkLoggers :: (LogLevel -> Logger) -> Loggers
+  mkLoggers logger =
+    Loggers
+      { danger = logger Danger
+      , warn = logger Warning
+      , info = logger Info
+      }
+
+runDBIO :: HSession.Session a -> HandlerWithReqScopeCtx a
+runDBIO s = join $ asks runDBIO' <*> pure s
+ where
+  runDBIO' AppCtx{_runDBIO} = _runDBIO
+
+transaction :: Tx.Transaction a -> HandlerWithReqScopeCtx a
+transaction s = join $ asks tx' <*> pure s
+ where
+  tx' AppCtx{_tx} = _tx
+
+extractReqScopeCtx :: AppCtx -> Vault.Vault -> ReqScopeCtx
+extractReqScopeCtx AppCtx{_reqScopeCtx} = _reqScopeCtx
+
+extractLoggers :: ReqScopeCtx -> Loggers
+extractLoggers ReqScopeCtx{loggers} = loggers
+
+mkLogger :: Maybe Session -> ULID -> POSIXTime -> Request -> LogLevel -> Logger
+mkLogger s accessId reqAt req loglevel additionalProps' item = BS.putStrLn . encode $ jsonLog <> sessionInfo <> additionalProps
+ where
+  jsonLog =
+    fromList
+      [ ("level", toJSON loglevel)
+      , ("accessId", toJSON $ show accessId)
+      , ("method", method)
+      , ("path", path)
+      , ("reqAt", toJSON $ posixSecondsToUTCTime reqAt)
+      , ("message", toJSON item)
+      , ("remoteHost", remoteHostAddr)
+      , ("queryParams", queryParams)
+      ]
+
+  sessionInfo :: KeyMap Value
+  sessionInfo = case s of
+    Nothing -> mempty
+    Just Session{..} -> fromList [("userName", toJSON userName)]
+
+  additionalProps = maybe mempty fromList additionalProps'
+  path = toJSON . decodeUtf8Lenient $ rawPathInfo req
+  method = toJSON . decodeUtf8Lenient $ requestMethod req
+  remoteHostAddr = toJSON . show $ remoteHost req
+  queryParams = toJSON . show $ queryString req
+
+logM :: LogLevel -> Maybe [(Key, Value)] -> forall a. (Show a, ToJSON a) => a -> HandlerWithReqScopeCtx ()
+logM level customProps msg = do
+  ReqScopeCtx{loggers} <- ask
+  liftIO $ logIO loggers level customProps msg
+
+logIO :: Loggers -> LogLevel -> Logger
+logIO Loggers{..} = \case
+  Danger -> danger
+  Warning -> warn
+  Info -> info

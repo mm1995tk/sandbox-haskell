@@ -30,9 +30,7 @@ library
       ApiExample.Domain
       ApiExample.Framework
       ApiExample.Framework.Alias
-      ApiExample.Framework.AppContext
       ApiExample.Framework.Http
-      ApiExample.Framework.Logger
       ApiExample.Framework.Security
       ApiExample.Framework.Server
       ApiExample.GraphQL
