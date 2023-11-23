@@ -10,8 +10,7 @@ module ApiExample.OpenAPI (
 
 import ApiExample.Config.Key (keyOfSessionId)
 import ApiExample.Domain (Person)
-import ApiExample.Framework.Security
-import ApiExample.Framework.Types
+import ApiExample.Framework
 import ApiExample.OpenAPI.CreateUser qualified as CreateUser
 import ApiExample.OpenAPI.GetUser qualified as GetUser
 import ApiExample.OpenAPI.ListUsers qualified as ListUser

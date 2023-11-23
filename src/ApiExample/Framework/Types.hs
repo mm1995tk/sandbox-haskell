@@ -32,6 +32,7 @@ import Network.Wai (Request)
 import Servant hiding ((:>))
 import Servant.OpenApi.Internal
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData)
+import ApiExample.Framework.Http (Http401ErrorRespBody)
 
 data WrappedHandler :: Effect where
   WrapHandler :: (Handler a) -> WrappedHandler m a
@@ -77,8 +78,6 @@ type HandlerWithReqScopeCtx = Eff (Reader ReqScopeCtx : BaseEffectStack)
 
 type TxHandler = Eff (RaiseTransaction : Reader ReqScopeCtx : BaseEffectStack)
 
-type WithVault method x y = Vault :>> method x y
-
 type RunDBIO = forall a. HSession.Session a -> HandlerWithReqScopeCtx a
 
 type AppTx = forall a. Tx.Transaction a -> HandlerWithReqScopeCtx a
@@ -90,18 +89,9 @@ data AppCtx = AppCtx
   , runDBIO' :: forall a. HSession.Session a -> IO (Either UsageError a)
   }
 
-
 data Session = Session {userName :: Text, email :: Text}
 
 type CookieAuth = AuthProtect "cookie"
-
-newtype Http401ErrorRespBody = Http401ErrorRespBody {message :: Text} deriving (Generic, Typeable, Show)
-
-instance ToJSON Http401ErrorRespBody
-instance ToSchema Http401ErrorRespBody where
-  declareNamedSchema p = (schema %~ type') <$> genericDeclareNamedSchema defaultSchemaOptions p
-   where
-    type' = (type_ ?~ OpenApiObject) . (properties .~ fromList [("message", toSchemaRef (Proxy @Text))])
 
 instance (HasOpenApi a) => HasOpenApi (CookieAuth :>> a) where
   toOpenApi _ = toOpenApi (Proxy @a) & addDefaultResponse401 keyOfSessionId

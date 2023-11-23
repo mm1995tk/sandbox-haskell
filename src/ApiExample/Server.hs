@@ -3,7 +3,6 @@
 module ApiExample.Server (startApp) where
 
 import ApiExample.Framework
-import ApiExample.Framework.Types (Http401ErrorRespBody (..))
 import ApiExample.GraphQL (GraphQL, handleGql)
 import ApiExample.OpenAPI
 import Control.Exception (ErrorCall (ErrorCallWithLocation), catch)

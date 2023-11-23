@@ -3,9 +3,12 @@ module ApiExample.Framework (
   module Sec,
   module AppContext,
   module Logger,
+  module Http,
+  WithVault,
 ) where
 
 import ApiExample.Framework.AppContext as AppContext
+import ApiExample.Framework.Http as Http
 import ApiExample.Framework.Logger as Logger
 import ApiExample.Framework.Security as Sec
 import ApiExample.Framework.Types as Types (
@@ -21,10 +24,12 @@ import ApiExample.Framework.Types as Types (
   RunDBIO,
   ServerM,
   Session (..),
-  WithVault,
   raiseTransaction,
   runHandlerM,
   runReaderReqScopeCtx,
   runReaderReqScopeCtx',
   runTx,
  )
+import Servant (Vault, (:>))
+
+type WithVault method x y = Vault :> method x y
