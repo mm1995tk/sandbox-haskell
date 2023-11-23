@@ -34,7 +34,7 @@ library
       ApiExample.Framework.Http
       ApiExample.Framework.Logger
       ApiExample.Framework.Security
-      ApiExample.Framework.Types
+      ApiExample.Framework.Server
       ApiExample.GraphQL
       ApiExample.GraphQL.API
       ApiExample.Infrastructure

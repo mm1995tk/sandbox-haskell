@@ -1,15 +1,15 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module ApiExample.Framework.Types where
+module ApiExample.Framework.Server where
 
 import ApiExample.Config.Key (keyOfSessionId)
 import ApiExample.Framework.Alias ((:>>))
+import ApiExample.Framework.Http (Http401ErrorRespBody)
 import Control.Lens ((%~), (.~), (?~))
 import Control.Lens.Lens ((&))
 import Control.Monad (join)
 import Data.Aeson (Key, ToJSON (..), Value)
-import Data.Data (Typeable)
-import Data.OpenApi (HasProperties (properties), OpenApiType (OpenApiObject), content, description, schema, type_)
+import Data.OpenApi (content, description, schema)
 import Data.OpenApi.Operation
 import Data.OpenApi.Schema
 import Data.Text
@@ -32,7 +32,6 @@ import Network.Wai (Request)
 import Servant hiding ((:>))
 import Servant.OpenApi.Internal
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData)
-import ApiExample.Framework.Http (Http401ErrorRespBody)
 
 data WrappedHandler :: Effect where
   WrapHandler :: (Handler a) -> WrappedHandler m a

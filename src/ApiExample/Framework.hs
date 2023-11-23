@@ -11,7 +11,7 @@ import ApiExample.Framework.AppContext as AppContext
 import ApiExample.Framework.Http as Http
 import ApiExample.Framework.Logger as Logger
 import ApiExample.Framework.Security as Sec
-import ApiExample.Framework.Types as Types (
+import ApiExample.Framework.Server as Types (
   AppAuthHandler,
   AppCtx,
   AppTx,

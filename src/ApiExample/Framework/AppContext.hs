@@ -8,7 +8,7 @@ module ApiExample.Framework.AppContext (
 ) where
 
 import ApiExample.Framework.Logger (logM, mkLogger)
-import ApiExample.Framework.Types
+import ApiExample.Framework.Server
 import Control.Monad (join)
 import Data.Maybe (fromMaybe)
 import Data.Time.Clock.POSIX (POSIXTime)

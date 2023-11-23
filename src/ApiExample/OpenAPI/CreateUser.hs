@@ -42,9 +42,8 @@ handler _ PersonRequest{..} = runReaderReqScopeCtx $ do
         return $ Just user
   maybe (throwError err404) return maybeUser
 
-
 -- Handler全体をトランザクションで囲む
--- import ApiExample.Framework.Types (runTx, raiseTransaction)
+-- import ApiExample.Framework.Server (runTx, raiseTransaction)
 
 -- handler :: ServerM Endpoint
 -- handler _ PersonRequest{..} = runReaderReqScopeCtx . runTx $ do
@@ -56,5 +55,3 @@ handler _ PersonRequest{..} = runReaderReqScopeCtx $ do
 --       let user = Person{personId = ulid, fullName = coerce fullName, age}
 --       raiseTransaction $ insertUser user
 --       return user
-
-

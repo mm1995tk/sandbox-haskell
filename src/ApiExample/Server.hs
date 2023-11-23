@@ -2,6 +2,7 @@
 
 module ApiExample.Server (startApp) where
 
+import ApiExample.Config.Key (keyOfSessionId)
 import ApiExample.Framework
 import ApiExample.GraphQL (GraphQL, handleGql)
 import ApiExample.OpenAPI
@@ -20,7 +21,6 @@ import Servant
 import Servant.Server.Experimental.Auth
 import Servant.Server.Internal.ServerError (responseServerError)
 import System.Environment (getEnv)
-import ApiExample.Config.Key (keyOfSessionId)
 
 type App = API :<|> GraphQL
 
@@ -78,7 +78,7 @@ catchUnexpectedError appCtx app req res = do
         logDanger = logIO loggers Info addionalProps @T.Text
     logDanger msg
     res $ responseServerError err500{errBody = encode $ object ["message" .= msg]}
-    
+
   msg :: T.Text
   msg = "An unexpected error has occurred."
 
