@@ -8,6 +8,7 @@ import ApiExample.GraphQL (GraphQL, handleGql)
 import ApiExample.OpenAPI
 import Control.Exception (ErrorCall (ErrorCallWithLocation), catch)
 import Data.Aeson
+import Data.Coerce (coerce)
 import Data.Map qualified as M
 import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8Lenient)
@@ -69,7 +70,7 @@ setUp vkey vskey app req res = do
 
 catchUnexpectedError :: AppCtx -> Middleware
 catchUnexpectedError appCtx app req res = do
-  let loggers = extractLoggers . extractReqScopeCtx appCtx $ vault req
+  let loggers = extractLoggers . coerce appCtx $ vault req
   next loggers
  where
   next loggers = catch (app req res) (handlerUnexpectedError loggers)
@@ -86,7 +87,7 @@ catchUnexpectedError appCtx app req res = do
 
 logMiddleware :: AppCtx -> Middleware
 logMiddleware appCtx app req res = do
-  let loggers = extractLoggers . extractReqScopeCtx appCtx $ vault req
+  let loggers = extractLoggers . coerce appCtx $ vault req
   let logInfo = logIO loggers Info Nothing @T.Text
   logInfo "start of request" *> next <* logInfo "end of request"
  where
