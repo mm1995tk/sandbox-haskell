@@ -1,6 +1,6 @@
 module ApiExample.GraphQL (handleGql, GraphQL) where
 
-import ApiExample.Framework (ServerM)
+import ApiExample.Framework (ServerM, runReaderReqScopeCtx')
 import ApiExample.GraphQL.API (gqlApi, initState)
 import Data.ByteString.Lazy.Char8
 import Data.Data (Typeable)
@@ -36,9 +36,9 @@ type Endpoint (name :: Symbol) = name :> Vault :> (API :<|> Schema :<|> Playgrou
 type GraphQL = Endpoint "gql"
 
 handleGql :: ServerM GraphQL
-handleGql _ = api :<|> withSchema gqlApi :<|> pure httpPlayground
+handleGql v = api :<|> withSchema gqlApi :<|> pure httpPlayground
  where
-  api body = do
+  api body = runReaderReqScopeCtx' v $ do
     ctx <- ask
     liftIO $ runHaxl' ctx (runApp gqlApi body)
 

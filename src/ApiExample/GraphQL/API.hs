@@ -6,7 +6,7 @@
 module ApiExample.GraphQL.API (gqlApi, initState) where
 
 import ApiExample.Domain
-import ApiExample.Framework.Server (AppCtx (..))
+import ApiExample.Framework.Server (ReqScopeCtx (..))
 import ApiExample.Infrastructure (findAll)
 import Control.Monad (unless, void)
 import Control.Monad.Trans (MonadTrans, lift)
@@ -36,16 +36,16 @@ instance StateKey DatasourceReq where
 initState :: State DatasourceReq
 initState = DatasourceReqState
 
-type Haxl = GenHaxl AppCtx ()
+type Haxl = GenHaxl ReqScopeCtx ()
 
 instance Hashable (DatasourceReq a) where
   hashWithSalt s (GetDeity a) = hashWithSalt s (1 :: Int, a)
 
-instance DataSource AppCtx DatasourceReq where
+instance DataSource ReqScopeCtx DatasourceReq where
   fetch _state _flags appCtx = SyncFetch $ f appCtx
 
-f :: AppCtx -> [BlockedFetch DatasourceReq] -> IO ()
-f AppCtx{runDBIO'} blockedFetches = unless (null ids) . void $ do
+f :: ReqScopeCtx -> [BlockedFetch DatasourceReq] -> IO ()
+f ReqScopeCtx{runDBIO'} blockedFetches = unless (null ids) . void $ do
   entities <- runDBIO' findAll
   case entities of
     Left e -> foldl (\acc var -> acc *> putFailure var e) mempty vars

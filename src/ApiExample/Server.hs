@@ -14,6 +14,7 @@ import Data.Text.Encoding (decodeUtf8Lenient)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.ULID (getULIDTime)
 import Data.Vault.Lazy qualified as Vault
+import Examples.HasqlExample (getPool)
 import GHC.IsList (fromList)
 import Network.Wai
 import Network.Wai.Handler.Warp
@@ -29,7 +30,7 @@ startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
   vaultKey <- Vault.newKey
   vaultAuthKey <- Vault.newKey
-  appCtx <- mkAppCtx vaultKey
+  let appCtx = mkAppCtx vaultKey
   let middleware = setUp vaultKey vaultAuthKey . logMiddleware appCtx . catchUnexpectedError appCtx
   let contexts = customFormatters :. authHandler vaultAuthKey :. EmptyContext
   let app = serveWithContext appProxy contexts $ mkServer appCtx
@@ -56,10 +57,11 @@ authHandler vskey = mkAuthHandler handler
 
 setUp :: Vault.Key ReqScopeCtx -> Vault.Key (Maybe Session) -> Middleware
 setUp vkey vskey app req res = do
+  pool <- getPool
   reqAt <- getPOSIXTime
   accessId <- getULIDTime reqAt
   let s = extractCookies req >>= M.lookup keyOfSessionId >>= findSession
-  let vault' = Vault.insert vkey (mkReqScopeCtx s accessId reqAt req) (vault req)
+  let vault' = Vault.insert vkey (mkReqScopeCtx pool s accessId reqAt req) (vault req)
   let vault'' = Vault.insert vskey s vault'
   app req{vault = vault''} res
  where

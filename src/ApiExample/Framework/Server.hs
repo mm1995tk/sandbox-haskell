@@ -3,10 +3,10 @@
 module ApiExample.Framework.Server where
 
 import ApiExample.Framework.Security (Session (..))
-import Control.Monad (join)
 import Data.Aeson (Key, ToJSON (..), Value, encode)
 import Data.Aeson.KeyMap (KeyMap)
 import Data.ByteString.Lazy.Char8 qualified as BS
+import Data.Coerce (coerce)
 import Data.Maybe (fromMaybe)
 import Data.Text
 import Data.Text.Encoding (decodeUtf8Lenient)
@@ -25,7 +25,6 @@ import Hasql.Pool (Pool, UsageError, use)
 import Hasql.Session qualified as HSession
 import Hasql.Transaction qualified as Tx
 import Hasql.Transaction.Sessions qualified as Txs
-import MyLib.Support (getPool)
 import Network.Wai (Request (queryString, rawPathInfo, remoteHost, requestMethod))
 import Servant hiding (throwError, (:>))
 import Servant qualified
@@ -52,8 +51,8 @@ runHandlerM ctx e = liftIO (run e) >>= either (Servant.throwError . snd) pure
 
 runReaderReqScopeCtx :: HandlerWithReqScopeCtx a -> Vault.Vault -> HandlerM a
 runReaderReqScopeCtx h v = do
-  AppCtx{_reqScopeCtx} <- ask
-  runReader (_reqScopeCtx v) h
+  f <- coerce <$> ask
+  runReader (f v) h
 
 runReaderReqScopeCtx' :: Vault -> HandlerWithReqScopeCtx a -> HandlerM a
 runReaderReqScopeCtx' = flip runReaderReqScopeCtx
@@ -77,15 +76,13 @@ type RunDBIO = forall a. HSession.Session a -> HandlerWithReqScopeCtx a
 
 type AppTx = forall a. Tx.Transaction a -> HandlerWithReqScopeCtx a
 
-data AppCtx = AppCtx
-  { _runDBIO :: RunDBIO
-  , _tx :: AppTx
-  , _reqScopeCtx :: Vault.Vault -> ReqScopeCtx
-  , runDBIO' :: forall a. HSession.Session a -> IO (Either UsageError a)
-  }
+newtype AppCtx = AppCtx (Vault.Vault -> ReqScopeCtx)
 
 data ReqScopeCtx = ReqScopeCtx
-  { accessId :: ULID
+  { _runDBIO :: RunDBIO
+  , _tx :: AppTx
+  , runDBIO' :: forall a. HSession.Session a -> IO (Either UsageError a)
+  , accessId :: ULID
   , reqAt :: POSIXTime
   , loggers :: Loggers
   }
@@ -105,16 +102,8 @@ instance ToJSON LogLevel where
   toJSON Warning = toJSON @Text "warning"
   toJSON Info = toJSON @Text "info"
 
-mkAppCtx :: Vault.Key ReqScopeCtx -> IO AppCtx
-mkAppCtx vaultKey = do
-  pool <- getPool
-  return
-    AppCtx
-      { _runDBIO = mkRunnerOfDBIO pool
-      , runDBIO' = use pool
-      , _tx = mkTx pool
-      , _reqScopeCtx = fromMaybe (error "the vault key is not found.") . Vault.lookup vaultKey
-      }
+mkAppCtx :: Vault.Key ReqScopeCtx -> AppCtx
+mkAppCtx vaultKey = AppCtx (fromMaybe (error "the vault key is not found.") . Vault.lookup vaultKey)
 
 mkRunnerOfDBIO :: Pool -> RunDBIO
 mkRunnerOfDBIO pool s = do
@@ -130,10 +119,13 @@ mkTx pool txQuery = do
   let logDanger = logM Danger Nothing @String
   either (\e -> logDanger (show e) *> throwError err500) pure resultOfTx
 
-mkReqScopeCtx :: Maybe Session -> ULID -> POSIXTime -> Request -> ReqScopeCtx
-mkReqScopeCtx s accessId reqAt req =
+mkReqScopeCtx :: Pool -> Maybe Session -> ULID -> POSIXTime -> Request -> ReqScopeCtx
+mkReqScopeCtx pool s accessId reqAt req =
   ReqScopeCtx
-    { accessId
+    { _runDBIO = mkRunnerOfDBIO pool
+    , runDBIO' = use pool
+    , _tx = mkTx pool
+    , accessId
     , reqAt
     , loggers = mkLoggers (mkLogger s accessId reqAt req)
     }
@@ -147,17 +139,17 @@ mkReqScopeCtx s accessId reqAt req =
       }
 
 runDBIO :: HSession.Session a -> HandlerWithReqScopeCtx a
-runDBIO s = join $ asks runDBIO' <*> pure s
- where
-  runDBIO' AppCtx{_runDBIO} = _runDBIO
+runDBIO s = do
+  ReqScopeCtx{_runDBIO} <- ask
+  _runDBIO s
 
 transaction :: Tx.Transaction a -> HandlerWithReqScopeCtx a
-transaction s = join $ asks tx' <*> pure s
- where
-  tx' AppCtx{_tx} = _tx
+transaction s = do
+  ReqScopeCtx{_tx} <- ask
+  _tx s
 
 extractReqScopeCtx :: AppCtx -> Vault.Vault -> ReqScopeCtx
-extractReqScopeCtx AppCtx{_reqScopeCtx} = _reqScopeCtx
+extractReqScopeCtx = coerce
 
 extractLoggers :: ReqScopeCtx -> Loggers
 extractLoggers ReqScopeCtx{loggers} = loggers
