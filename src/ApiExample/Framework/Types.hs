@@ -90,7 +90,6 @@ data AppCtx = AppCtx
   , runDBIO' :: forall a. HSession.Session a -> IO (Either UsageError a)
   }
 
-type Cookies = [(Text, Text)]
 
 data Session = Session {userName :: Text, email :: Text}
 

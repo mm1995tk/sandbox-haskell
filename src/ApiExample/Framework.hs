@@ -13,7 +13,6 @@ import ApiExample.Framework.Types as Types (
   AppCtx,
   AppTx,
   CookieAuth,
-  Cookies,
   HandlerM,
   LogLevel (..),
   Logger,
@@ -23,9 +22,9 @@ import ApiExample.Framework.Types as Types (
   ServerM,
   Session (..),
   WithVault,
+  raiseTransaction,
   runHandlerM,
   runReaderReqScopeCtx,
   runReaderReqScopeCtx',
   runTx,
-  raiseTransaction,
  )

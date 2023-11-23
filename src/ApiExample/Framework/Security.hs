@@ -1,15 +1,17 @@
 module ApiExample.Framework.Security (extractCookies, SecuritySchemeKey (..), securityRequirements) where
 
-import ApiExample.Framework.Types (Cookies)
 import Control.Lens
 import Data.Bifunctor (first)
 import Data.Map qualified as M
 import Data.OpenApi (HasSecurity (..), SecurityRequirement (..))
+import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8Lenient)
 import GHC.IsList (fromList)
 import MyLib.Utils (showText)
 import Network.Wai (Request (requestHeaders))
+
+type Cookies = [(Text, Text)]
 
 extractCookies :: Request -> Maybe (M.Map T.Text T.Text)
 extractCookies req = M.fromList . parseCookies . decodeUtf8Lenient <$> lookup "cookie" (requestHeaders req)
