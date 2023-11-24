@@ -45,7 +45,7 @@ handler _ PersonRequest{..} = do
 -- import ApiExample.Framework.Types (runTx, raiseTransaction)
 
 -- handler :: ServerM Endpoint
--- handler _ PersonRequest{..} = runReaderReqScopeCtx . runTx $ do
+-- handler _ PersonRequest{..} = runReaderAppContext . runTx $ do
 --   ulid <- T.pack . show <$> getULIDM
 --   users <- raiseTransaction $ findMany' [ulid]
 --   case Vec.find (\p -> p.personId == ulid) users of

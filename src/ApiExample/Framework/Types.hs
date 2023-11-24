@@ -6,7 +6,6 @@ import Data.Aeson (Key, ToJSON (..), Value)
 import Data.Text
 import Data.Time.Clock.POSIX (POSIXTime)
 import Data.ULID (ULID)
-import Data.Vault.Lazy qualified as Vault
 import Effectful (Eff, Effect, IOE)
 import Effectful.Error.Dynamic (Error)
 import Effectful.Reader.Dynamic
@@ -35,11 +34,9 @@ type ServerM api = ServerT api HandlerM
 
 type HandlerM = Eff EffectStack
 
-type EffectStack = '[Reader ReqScopeCtx, Reader AppCtx, WrappedHandler, Error ServerError, IOE]
+type EffectStack = '[Reader AppContext, WrappedHandler, Error ServerError, IOE]
 
-newtype AppCtx = AppCtx (Vault.Vault -> ReqScopeCtx)
-
-data ReqScopeCtx = ReqScopeCtx
+data AppContext = AppContext
   { _runDBIO :: RunDBIO
   , _tx :: AppTx
   , runDBIO' :: forall a. HSession.Session a -> IO (Either UsageError a)

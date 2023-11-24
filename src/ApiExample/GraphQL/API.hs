@@ -36,16 +36,16 @@ instance StateKey DatasourceReq where
 initState :: State DatasourceReq
 initState = DatasourceReqState
 
-type Haxl = GenHaxl ReqScopeCtx ()
+type Haxl = GenHaxl AppContext ()
 
 instance Hashable (DatasourceReq a) where
   hashWithSalt s (GetDeity a) = hashWithSalt s (1 :: Int, a)
 
-instance DataSource ReqScopeCtx DatasourceReq where
+instance DataSource AppContext DatasourceReq where
   fetch _state _flags appCtx = SyncFetch $ f appCtx
 
-f :: ReqScopeCtx -> [BlockedFetch DatasourceReq] -> IO ()
-f ReqScopeCtx{runDBIO'} blockedFetches = unless (null ids) . void $ do
+f :: AppContext -> [BlockedFetch DatasourceReq] -> IO ()
+f AppContext{runDBIO'} blockedFetches = unless (null ids) . void $ do
   entities <- runDBIO' findAll
   case entities of
     Left e -> foldl (\acc var -> acc *> putFailure var e) mempty vars

@@ -29,7 +29,6 @@ library
       ApiExample.Config.Key
       ApiExample.Domain
       ApiExample.Framework
-      ApiExample.Framework.Alias
       ApiExample.Framework.Http
       ApiExample.Framework.Security
       ApiExample.Framework.Types

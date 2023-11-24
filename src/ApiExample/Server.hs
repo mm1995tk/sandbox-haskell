@@ -10,7 +10,6 @@ import Control.Exception (ErrorCall (ErrorCallWithLocation), catch)
 import Data.Aeson
 import Data.Aeson.KeyMap (KeyMap)
 import Data.ByteString.Lazy.Char8 qualified as BS
-import Data.Coerce (coerce)
 import Data.Map qualified as M
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
@@ -22,7 +21,7 @@ import Effectful (liftIO, runEff)
 import Effectful.Dispatch.Dynamic (interpret)
 import Effectful.Error.Dynamic (runErrorNoCallStack)
 import Effectful.Error.Dynamic qualified as Effectful
-import Effectful.Reader.Dynamic (ask, runReader)
+import Effectful.Reader.Dynamic (runReader)
 import Examples.HasqlExample (getPool)
 import GHC.IsList (fromList)
 import Hasql.Pool (Pool, use)
@@ -36,32 +35,30 @@ import System.Environment (getEnv)
 
 type App = API :<|> GraphQL
 
+type CreateCtxFromVault = Vault.Vault -> AppContext
+
 startApp :: IO ()
 startApp = do
   port <- read @Int <$> getEnv "SERVER_PORT"
   vaultKey <- Vault.newKey
   vaultAuthKey <- Vault.newKey
-  let appCtx = mkAppCtx vaultKey
-  let middleware = setUp vaultKey vaultAuthKey . logMiddleware appCtx . catchUnexpectedError appCtx
+  let createCtxFromVault = mkCreateCtxFromVault vaultKey
+  let middleware = setUp vaultKey vaultAuthKey . logMiddleware createCtxFromVault . catchUnexpectedError createCtxFromVault
   let contexts = customFormatters :. authHandler vaultAuthKey :. EmptyContext
-  run port $ middleware (mkApp contexts appCtx)
+  run port $ middleware (mkApp contexts createCtxFromVault)
  where
-  mkApp contexts appCtx req =
+  mkApp contexts createCtxFromVault req =
     serveWithContextT
       (Proxy @App)
       contexts
-      (runHandlerM (vault req) appCtx)
+      (runHandlerM (vault req) createCtxFromVault)
       (serverM :<|> handleGql)
       req
 
-runHandlerM :: Vault.Vault -> AppCtx -> HandlerM a -> Handler a
-runHandlerM v ctx e = liftIO (run' e) >>= either Servant.throwError pure
+runHandlerM :: Vault.Vault -> CreateCtxFromVault -> HandlerM a -> Handler a
+runHandlerM v createCtxFromVault e = liftIO (run' e) >>= either Servant.throwError pure
  where
-  run' = runEff . runErrorNoCallStack @ServerError . runWrappedHandler . runReader ctx . runReaderReqScopeCtx
-
-  runReaderReqScopeCtx h = do
-    f <- coerce <$> ask
-    runReader (f v) h
+  run' = runEff . runErrorNoCallStack @ServerError . runWrappedHandler . runReader (createCtxFromVault v)
 
   runWrappedHandler = interpret $ const
     \(WrapHandler h) -> liftIO (runHandler h) >>= either Effectful.throwError pure
@@ -74,21 +71,21 @@ authHandler vskey = mkAuthHandler handler
     Nothing -> throwError err500
     _ -> throwError err401{errBody = encode $ toJSON Http401ErrorRespBody{message = "no session"}}
 
-setUp :: Vault.Key ReqScopeCtx -> Vault.Key (Maybe Session) -> Middleware
+setUp :: Vault.Key AppContext -> Vault.Key (Maybe Session) -> Middleware
 setUp vkey vskey app req res = do
   pool <- getPool
   reqAt <- getPOSIXTime
   accessId <- getULIDTime reqAt
   let s = extractCookies req >>= M.lookup keyOfSessionId >>= findSession
-  let vault' = Vault.insert vkey (mkReqScopeCtx pool s accessId reqAt req) (vault req)
+  let vault' = Vault.insert vkey (mkAppContext pool s accessId reqAt req) (vault req)
   let vault'' = Vault.insert vskey s vault'
   app req{vault = vault''} res
  where
   findSession _ = Just Session{userName = "dummy", email = "dummy"}
 
-catchUnexpectedError :: AppCtx -> Middleware
-catchUnexpectedError appCtx app req res = do
-  let loggers = extractLoggers . coerce appCtx $ vault req
+catchUnexpectedError :: CreateCtxFromVault -> Middleware
+catchUnexpectedError createCtxFromVault app req res = do
+  let loggers = extractLoggers . createCtxFromVault $ vault req
   next loggers
  where
   next loggers = catch (app req res) (handlerUnexpectedError loggers)
@@ -103,9 +100,9 @@ catchUnexpectedError appCtx app req res = do
   msg :: T.Text
   msg = "An unexpected error has occurred."
 
-logMiddleware :: AppCtx -> Middleware
-logMiddleware appCtx app req res = do
-  let loggers = extractLoggers . coerce appCtx $ vault req
+logMiddleware :: CreateCtxFromVault -> Middleware
+logMiddleware createCtxFromVault app req res = do
+  let loggers = extractLoggers . createCtxFromVault $ vault req
   let logInfo = logIO loggers Info Nothing @T.Text
   logInfo "start of request" *> next <* logInfo "end of request"
  where
@@ -137,12 +134,12 @@ notFoundFormatter req =
             ]
     }
 
-mkAppCtx :: Vault.Key ReqScopeCtx -> AppCtx
-mkAppCtx vaultKey = AppCtx (fromMaybe (error "the vault key is not found.") . Vault.lookup vaultKey)
+mkCreateCtxFromVault :: Vault.Key AppContext -> CreateCtxFromVault
+mkCreateCtxFromVault vaultKey = fromMaybe (error "the vault key is not found.") . Vault.lookup vaultKey
 
-mkReqScopeCtx :: Pool -> Maybe Session -> ULID -> POSIXTime -> Request -> ReqScopeCtx
-mkReqScopeCtx pool s accessId reqAt req =
-  ReqScopeCtx
+mkAppContext :: Pool -> Maybe Session -> ULID -> POSIXTime -> Request -> AppContext
+mkAppContext pool s accessId reqAt req =
+  AppContext
     { _runDBIO = mkRunnerOfDBIO pool
     , runDBIO' = use pool
     , _tx = mkTx pool
@@ -199,5 +196,5 @@ mkLogger s accessId reqAt req loglevel additionalProps' item = BS.putStrLn . enc
   remoteHostAddr = toJSON . show $ remoteHost req
   queryParams = toJSON . show $ queryString req
 
-extractLoggers :: ReqScopeCtx -> Loggers
-extractLoggers ReqScopeCtx{loggers} = loggers
+extractLoggers :: AppContext -> Loggers
+extractLoggers AppContext{loggers} = loggers
