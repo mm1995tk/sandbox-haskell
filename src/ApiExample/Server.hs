@@ -8,15 +8,25 @@ import ApiExample.GraphQL (GraphQL, handleGql)
 import ApiExample.OpenAPI
 import Control.Exception (ErrorCall (ErrorCallWithLocation), catch)
 import Data.Aeson
+import Data.Aeson.KeyMap (KeyMap)
+import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Coerce (coerce)
 import Data.Map qualified as M
+import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8Lenient)
-import Data.Time.Clock.POSIX (getPOSIXTime)
-import Data.ULID (getULIDTime)
+import Data.Time.Clock.POSIX (POSIXTime, getPOSIXTime, posixSecondsToUTCTime)
+import Data.ULID (ULID, getULIDTime)
 import Data.Vault.Lazy qualified as Vault
+import Effectful (liftIO, runEff)
+import Effectful.Dispatch.Dynamic (interpret)
+import Effectful.Error.Dynamic (runErrorNoCallStack)
+import Effectful.Error.Dynamic qualified as Effectful
+import Effectful.Reader.Dynamic (runReader)
 import Examples.HasqlExample (getPool)
 import GHC.IsList (fromList)
+import Hasql.Pool (Pool, use)
+import Hasql.Transaction.Sessions qualified as Txs
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
@@ -47,6 +57,15 @@ startApp = do
       authCtx
       (runHandlerM appCtx)
       (serverM :<|> handleGql)
+
+runHandlerM :: AppCtx -> HandlerM a -> Handler a
+runHandlerM ctx e = liftIO (run' e) >>= either Servant.throwError pure
+ where
+  run' = runEff . runErrorNoCallStack @ServerError . runWrappedHandler . runReader ctx
+
+  runWrappedHandler = interpret handler
+   where
+    handler _ (WrapHandler h) = liftIO (runHandler h) >>= either Effectful.throwError pure
 
 authHandler :: Vault.Key (Maybe Session) -> AppAuthHandler
 authHandler vskey = mkAuthHandler handler
@@ -118,3 +137,68 @@ notFoundFormatter req =
                    )
             ]
     }
+
+mkAppCtx :: Vault.Key ReqScopeCtx -> AppCtx
+mkAppCtx vaultKey = AppCtx (fromMaybe (error "the vault key is not found.") . Vault.lookup vaultKey)
+
+mkReqScopeCtx :: Pool -> Maybe Session -> ULID -> POSIXTime -> Request -> ReqScopeCtx
+mkReqScopeCtx pool s accessId reqAt req =
+  ReqScopeCtx
+    { _runDBIO = mkRunnerOfDBIO pool
+    , runDBIO' = use pool
+    , _tx = mkTx pool
+    , accessId
+    , reqAt
+    , loggers = mkLoggers (mkLogger s accessId reqAt req)
+    }
+ where
+  mkLoggers :: (LogLevel -> Logger) -> Loggers
+  mkLoggers logger =
+    Loggers
+      { danger = logger Danger
+      , warn = logger Warning
+      , info = logger Info
+      }
+
+mkRunnerOfDBIO :: Pool -> RunDBIO
+mkRunnerOfDBIO pool s = do
+  let logDanger = logM Danger Nothing @String
+  resultOfSQLQuery <- liftIO $ use pool s
+  either (\e -> logDanger (show e) *> Effectful.throwError err500) pure resultOfSQLQuery
+
+mkTx :: Pool -> AppTx
+mkTx pool txQuery = do
+  resultOfTx <-
+    let resultOfTx = use pool $ Txs.transaction Txs.RepeatableRead Txs.Write txQuery
+     in liftIO resultOfTx
+  let logDanger = logM Danger Nothing @String
+  either (\e -> logDanger (show e) *> Effectful.throwError err500) pure resultOfTx
+
+mkLogger :: Maybe Session -> ULID -> POSIXTime -> Request -> LogLevel -> Logger
+mkLogger s accessId reqAt req loglevel additionalProps' item = BS.putStrLn . encode $ jsonLog <> sessionInfo <> additionalProps
+ where
+  jsonLog =
+    fromList
+      [ ("level", toJSON loglevel)
+      , ("accessId", toJSON $ show accessId)
+      , ("method", method)
+      , ("path", path)
+      , ("reqAt", toJSON $ posixSecondsToUTCTime reqAt)
+      , ("message", toJSON item)
+      , ("remoteHost", remoteHostAddr)
+      , ("queryParams", queryParams)
+      ]
+
+  sessionInfo :: KeyMap Value
+  sessionInfo = case s of
+    Nothing -> mempty
+    Just Session{..} -> fromList [("userName", toJSON userName)]
+
+  additionalProps = maybe mempty fromList additionalProps'
+  path = toJSON . decodeUtf8Lenient $ rawPathInfo req
+  method = toJSON . decodeUtf8Lenient $ requestMethod req
+  remoteHostAddr = toJSON . show $ remoteHost req
+  queryParams = toJSON . show $ queryString req
+
+extractLoggers :: ReqScopeCtx -> Loggers
+extractLoggers ReqScopeCtx{loggers} = loggers

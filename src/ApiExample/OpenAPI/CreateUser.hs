@@ -42,7 +42,7 @@ handler _ PersonRequest{..} = runReaderReqScopeCtx $ do
   maybe (throwError err404) return maybeUser
 
 -- Handler全体をトランザクションで囲む
--- import ApiExample.Framework.Server (runTx, raiseTransaction)
+-- import ApiExample.Framework.Types (runTx, raiseTransaction)
 
 -- handler :: ServerM Endpoint
 -- handler _ PersonRequest{..} = runReaderReqScopeCtx . runTx $ do

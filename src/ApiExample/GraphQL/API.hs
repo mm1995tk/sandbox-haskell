@@ -6,7 +6,7 @@
 module ApiExample.GraphQL.API (gqlApi, initState) where
 
 import ApiExample.Domain
-import ApiExample.Framework.Server (ReqScopeCtx (..))
+import ApiExample.Framework
 import ApiExample.Infrastructure (findAll)
 import Control.Monad (unless, void)
 import Control.Monad.Trans (MonadTrans, lift)
