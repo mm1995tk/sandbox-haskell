@@ -6,14 +6,13 @@ import ApiExample.Domain (Person)
 import ApiExample.Framework
 import ApiExample.Infrastructure (findMany'')
 import Control.Lens
-import Data.OpenApi (HasDescription (description), OpenApi)
+import Data.OpenApi (HasDescription (description))
 import Data.Text (Text)
 import Data.Vector qualified as Vec
 import Effectful (liftIO)
 import Effectful.Error.Dynamic
 import MyLib.Utils (infoSubApi)
 import Servant hiding (IsSubAPI, throwError)
-import Servant.OpenApi.Internal.TypeLevel.API (IsSubAPI)
 
 type Endpoint =
   "users"
@@ -22,7 +21,7 @@ type Endpoint =
     :> Capture "user-id" Text
     :> WithVault Get '[JSON] Person
 
-openapiEndpointInfo :: forall api. (IsSubAPI Endpoint api) => Proxy api -> (OpenApi -> OpenApi)
+openapiEndpointInfo :: forall api. OpenApiEndpointInfo Endpoint api
 openapiEndpointInfo = infoSubApi @Endpoint @api Proxy $ description' . sec
  where
   description' = description ?~ "find user"

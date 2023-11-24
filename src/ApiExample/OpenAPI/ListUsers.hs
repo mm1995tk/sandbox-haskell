@@ -5,13 +5,12 @@ import ApiExample.Framework
 import ApiExample.Infrastructure (findAll)
 import ApiExample.Schema
 import Control.Lens
-import Data.OpenApi (OpenApi, description)
+import Data.OpenApi (description)
 import Data.Proxy (Proxy (..))
 import Data.Text (Text)
 import Data.Vector qualified as Vec
 import MyLib.Utils (infoSubApi)
 import Servant (Get, Header, JSON, QueryParam, (:>))
-import Servant.OpenApi.Internal.TypeLevel (IsSubAPI)
 
 type Endpoint =
   "users"
@@ -19,7 +18,7 @@ type Endpoint =
     :> QueryParam "order-by" OrderBy
     :> WithVault Get '[JSON] (Vec.Vector Person)
 
-openapiEndpointInfo :: forall api. (IsSubAPI Endpoint api) => Proxy api -> (OpenApi -> OpenApi)
+openapiEndpointInfo :: forall api. OpenApiEndpointInfo Endpoint api
 openapiEndpointInfo = infoSubApi @Endpoint @api Proxy description'
  where
   description' = description ?~ "list user"

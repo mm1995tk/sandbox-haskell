@@ -15,7 +15,6 @@ import Data.Vector qualified as Vec
 import Effectful.Error.Dynamic
 import MyLib.Utils (getULIDM, infoSubApi)
 import Servant hiding (AllIsElem, IsIn, IsSubAPI, throwError)
-import Servant.OpenApi.Internal.TypeLevel.API (IsSubAPI)
 
 type Endpoint =
   "users"
@@ -23,7 +22,7 @@ type Endpoint =
     :> ReqBody '[JSON] PersonRequest
     :> WithVault Post '[JSON] Person
 
-openapiEndpointInfo :: forall api. (IsSubAPI Endpoint api) => Proxy api -> (OpenApi -> OpenApi)
+openapiEndpointInfo :: forall api. OpenApiEndpointInfo Endpoint api
 openapiEndpointInfo = infoSubApi @Endpoint @api Proxy $ description' . sec
  where
   description' = description ?~ "create user"
