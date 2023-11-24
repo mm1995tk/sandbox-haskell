@@ -22,7 +22,7 @@ import Effectful (liftIO, runEff)
 import Effectful.Dispatch.Dynamic (interpret)
 import Effectful.Error.Dynamic (runErrorNoCallStack)
 import Effectful.Error.Dynamic qualified as Effectful
-import Effectful.Reader.Dynamic (runReader)
+import Effectful.Reader.Dynamic (ask, runReader)
 import Examples.HasqlExample (getPool)
 import GHC.IsList (fromList)
 import Hasql.Pool (Pool, use)
@@ -44,28 +44,27 @@ startApp = do
   let appCtx = mkAppCtx vaultKey
   let middleware = setUp vaultKey vaultAuthKey . logMiddleware appCtx . catchUnexpectedError appCtx
   let contexts = customFormatters :. authHandler vaultAuthKey :. EmptyContext
-  let app = serveWithContext appProxy contexts $ mkServer appCtx
-  run port $ middleware app
+  run port $ middleware (mkApp contexts appCtx)
  where
-  appProxy = Proxy @App
-  authCtx = Proxy @'[AppAuthHandler]
-
-  mkServer :: AppCtx -> Server App
-  mkServer appCtx =
-    hoistServerWithContext
-      appProxy
-      authCtx
-      (runHandlerM appCtx)
+  mkApp contexts appCtx req =
+    serveWithContextT
+      (Proxy @App)
+      contexts
+      (runHandlerM (vault req) appCtx)
       (serverM :<|> handleGql)
+      req
 
-runHandlerM :: AppCtx -> HandlerM a -> Handler a
-runHandlerM ctx e = liftIO (run' e) >>= either Servant.throwError pure
+runHandlerM :: Vault.Vault -> AppCtx -> HandlerM a -> Handler a
+runHandlerM v ctx e = liftIO (run' e) >>= either Servant.throwError pure
  where
-  run' = runEff . runErrorNoCallStack @ServerError . runWrappedHandler . runReader ctx
+  run' = runEff . runErrorNoCallStack @ServerError . runWrappedHandler . runReader ctx . runReaderReqScopeCtx
 
-  runWrappedHandler = interpret handler
-   where
-    handler _ (WrapHandler h) = liftIO (runHandler h) >>= either Effectful.throwError pure
+  runReaderReqScopeCtx h = do
+    f <- coerce <$> ask
+    runReader (f v) h
+
+  runWrappedHandler = interpret $ const
+    \(WrapHandler h) -> liftIO (runHandler h) >>= either Effectful.throwError pure
 
 authHandler :: Vault.Key (Maybe Session) -> AppAuthHandler
 authHandler vskey = mkAuthHandler handler

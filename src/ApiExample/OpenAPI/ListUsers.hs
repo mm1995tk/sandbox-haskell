@@ -16,7 +16,7 @@ type Endpoint =
   "users"
     :> Header "user-agent" Text
     :> QueryParam "order-by" OrderBy
-    :> WithVault Get '[JSON] (Vec.Vector Person)
+    :> Get '[JSON] (Vec.Vector Person)
 
 openapiEndpointInfo :: forall api. OpenApiEndpointInfo Endpoint api
 openapiEndpointInfo = infoSubApi @Endpoint @api Proxy description'
@@ -24,7 +24,7 @@ openapiEndpointInfo = infoSubApi @Endpoint @api Proxy description'
   description' = description ?~ "list user"
 
 handler :: ServerM Endpoint
-handler _ queryParams = runReaderReqScopeCtx $ do
+handler _ queryParams = do
   let logInfo = logM Info
 
   case queryParams of

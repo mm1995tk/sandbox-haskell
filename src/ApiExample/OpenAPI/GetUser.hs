@@ -19,7 +19,7 @@ type Endpoint =
     :> CookieAuth
     :> Header "user-agent" Text
     :> Capture "user-id" Text
-    :> WithVault Get '[JSON] Person
+    :> Get '[JSON] Person
 
 openapiEndpointInfo :: forall api. OpenApiEndpointInfo Endpoint api
 openapiEndpointInfo = infoSubApi @Endpoint @api Proxy $ description' . sec
@@ -28,9 +28,9 @@ openapiEndpointInfo = infoSubApi @Endpoint @api Proxy $ description' . sec
   sec = securityRequirements [[(Cookie, [])]]
 
 handler :: ServerM Endpoint
-handler s _ uid v = do
+handler s _ uid = do
   liftIO $ print s.userName
-  users <- runReaderReqScopeCtx' v . runDBIO $ findMany'' [uid]
+  users <- runDBIO $ findMany'' [uid]
   if Vec.null users
     then throwError err404{errBody = "the user you specified is not found"}
     else return (Vec.head users)

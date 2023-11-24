@@ -20,7 +20,7 @@ type Endpoint =
   "users"
     :> CookieAuth
     :> ReqBody '[JSON] PersonRequest
-    :> WithVault Post '[JSON] Person
+    :> Post '[JSON] Person
 
 openapiEndpointInfo :: forall api. OpenApiEndpointInfo Endpoint api
 openapiEndpointInfo = infoSubApi @Endpoint @api Proxy $ description' . sec
@@ -29,7 +29,7 @@ openapiEndpointInfo = infoSubApi @Endpoint @api Proxy $ description' . sec
   sec = securityRequirements [[(Cookie, [])]]
 
 handler :: ServerM Endpoint
-handler _ PersonRequest{..} = runReaderReqScopeCtx $ do
+handler _ PersonRequest{..} = do
   ulid <- T.pack . show <$> getULIDM
   maybeUser <- transaction $ do
     users <- findMany' [ulid]

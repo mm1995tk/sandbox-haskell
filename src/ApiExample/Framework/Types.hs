@@ -33,11 +33,9 @@ makeEffect ''RaiseTransaction
 
 type ServerM api = ServerT api HandlerM
 
-type HandlerM = Eff BaseEffectStack
+type HandlerM = Eff EffectStack
 
-type HandlerWithReqScopeCtx = Eff (Reader ReqScopeCtx : BaseEffectStack)
-
-type BaseEffectStack = '[Reader AppCtx, WrappedHandler, Error ServerError, IOE]
+type EffectStack = '[Reader ReqScopeCtx, Reader AppCtx, WrappedHandler, Error ServerError, IOE]
 
 newtype AppCtx = AppCtx (Vault.Vault -> ReqScopeCtx)
 
@@ -50,9 +48,9 @@ data ReqScopeCtx = ReqScopeCtx
   , loggers :: Loggers
   }
 
-type RunDBIO = forall a. HSession.Session a -> HandlerWithReqScopeCtx a
+type RunDBIO = forall a. HSession.Session a -> HandlerM a
 
-type AppTx = forall a. Tx.Transaction a -> HandlerWithReqScopeCtx a
+type AppTx = forall a. Tx.Transaction a -> HandlerM a
 
 data Loggers = Loggers
   { danger :: Logger
