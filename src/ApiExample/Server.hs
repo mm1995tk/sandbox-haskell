@@ -18,7 +18,6 @@ import Data.Time.Clock.POSIX (POSIXTime, getPOSIXTime, posixSecondsToUTCTime)
 import Data.ULID (ULID, getULIDTime)
 import Data.Vault.Lazy qualified as Vault
 import Effectful (liftIO, runEff)
-import Effectful.Dispatch.Dynamic (interpret)
 import Effectful.Error.Dynamic (runErrorNoCallStack)
 import Effectful.Error.Dynamic qualified as Effectful
 import Effectful.Reader.Dynamic (runReader)
@@ -51,17 +50,14 @@ startApp = do
     serveWithContextT
       (Proxy @App)
       contexts
-      (runHandlerM (vault req) createCtxFromVault)
+      (runHandlerM $ createCtxFromVault (vault req))
       (serverM :<|> handleGql)
       req
 
-runHandlerM :: Vault.Vault -> CreateCtxFromVault -> HandlerM a -> Handler a
-runHandlerM v createCtxFromVault e = liftIO (run' e) >>= either Servant.throwError pure
+runHandlerM :: AppContext -> HandlerM a -> Handler a
+runHandlerM ctx e = liftIO (run' e) >>= either Servant.throwError pure
  where
-  run' = runEff . runErrorNoCallStack @ServerError . runWrappedHandler . runReader (createCtxFromVault v)
-
-  runWrappedHandler = interpret $ const
-    \(WrapHandler h) -> liftIO (runHandler h) >>= either Effectful.throwError pure
+  run' = runEff . runErrorNoCallStack @ServerError . runReader ctx
 
 authHandler :: Vault.Key (Maybe Session) -> AppAuthHandler
 authHandler vskey = mkAuthHandler handler

@@ -15,15 +15,9 @@ import Hasql.Pool (UsageError)
 import Hasql.Session qualified as HSession
 import Hasql.Transaction qualified as Tx
 import Servant (
-  Handler,
   HasServer (ServerT),
   ServerError,
  )
-
-data WrappedHandler :: Effect where
-  WrapHandler :: (Handler a) -> WrappedHandler m a
-
-makeEffect ''WrappedHandler
 
 data RaiseTransaction :: Effect where
   RaiseTransaction :: (Tx.Transaction a) -> RaiseTransaction m a
@@ -34,7 +28,7 @@ type ServerM api = ServerT api HandlerM
 
 type HandlerM = Eff EffectStack
 
-type EffectStack = '[Reader AppContext, WrappedHandler, Error ServerError, IOE]
+type EffectStack = '[Reader AppContext, Error ServerError, IOE]
 
 data AppContext = AppContext
   { _runDBIO :: RunDBIO
