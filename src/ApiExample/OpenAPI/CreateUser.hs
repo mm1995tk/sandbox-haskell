@@ -40,15 +40,3 @@ handler _ PersonRequest{..} = do
         insertUser user
         return $ Just user
   maybe (throwError err404) return maybeUser
-
--- Handler全体をトランザクションで囲む
--- handler :: ServerM Endpoint
--- handler _ PersonRequest{..} = runTx $ do
---   ulid <- T.pack . show <$> getULIDM
---   users <- raiseTransaction $ findMany' [ulid]
---   case Vec.find (\p -> p.personId == ulid) users of
---     Just _ -> throwError err404
---     Nothing -> raiseTransaction $ do
---       let user = Person{personId = ulid, fullName = coerce fullName, age}
---       insertUser user
---       return user

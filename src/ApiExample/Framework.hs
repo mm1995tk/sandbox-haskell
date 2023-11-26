@@ -11,19 +11,13 @@ import ApiExample.Framework.Types as Types
 import Data.Aeson (Key, ToJSON (..), Value)
 import Data.Data (Proxy)
 import Data.OpenApi (OpenApi)
-import Effectful (Eff, liftIO, raise)
-import Effectful.Dispatch.Static
+import Effectful (liftIO)
 import Effectful.Reader.Dynamic
 import Hasql.Session qualified as HSession
 import Hasql.Transaction qualified as Tx
 import Servant.OpenApi.TypeLevel (IsSubAPI)
 
 type OpenApiEndpointInfo endpoint api = (IsSubAPI endpoint api) => Proxy api -> (OpenApi -> OpenApi)
-
-runTx :: Eff (TransactionEffect : EffectStack) a -> HandlerM a
-runTx eff = do
-  AppContext{_tx} <- ask
-  evalStaticRep (TransactionEffect $ RaiseTransaction _tx) eff
 
 runDBIO :: HSession.Session a -> HandlerM a
 runDBIO s = do
@@ -34,11 +28,6 @@ transaction :: Tx.Transaction a -> HandlerM a
 transaction s = do
   AppContext{_tx} <- ask
   _tx s
-
-raiseTransaction :: Tx.Transaction a -> Eff (TransactionEffect : EffectStack) a
-raiseTransaction tx = do
-  TransactionEffect (RaiseTransaction f) <- getStaticRep
-  raise (f tx)
 
 logM :: LogLevel -> Maybe [(Key, Value)] -> forall a. (Show a, ToJSON a) => a -> HandlerM ()
 logM level customProps msg = do

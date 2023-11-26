@@ -6,8 +6,7 @@ import Data.Aeson (Key, ToJSON (..), Value)
 import Data.Text
 import Data.Time.Clock.POSIX (POSIXTime)
 import Data.ULID (ULID)
-import Effectful (Dispatch (..), DispatchOf, Eff, Effect, IOE)
-import Effectful.Dispatch.Static
+import Effectful (Eff, IOE)
 import Effectful.Error.Dynamic (Error)
 import Effectful.Reader.Dynamic
 import GHC.Generics (Generic)
@@ -37,13 +36,6 @@ data AppContext = AppContext
 type RunDBIO = forall a. HSession.Session a -> HandlerM a
 
 type AppTx = forall a. Tx.Transaction a -> HandlerM a
-
-data TransactionEffect :: Effect
-
-newtype RaiseTransaction = RaiseTransaction AppTx
--- おまじない
-type instance DispatchOf TransactionEffect = Static WithSideEffects
-newtype instance StaticRep TransactionEffect = TransactionEffect RaiseTransaction
 
 data Loggers = Loggers
   { danger :: Logger
