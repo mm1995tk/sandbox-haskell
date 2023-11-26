@@ -3,7 +3,9 @@
 module MyLib.Utils where
 
 import Control.Concurrent (threadDelay)
-import Control.Lens ((%~), (&))
+import Control.Exception (SomeException)
+import Control.Exception.Safe (Exception (fromException), Handler (..))
+import Control.Lens ((%~))
 import Control.Monad.Trans (MonadIO, liftIO)
 import Data.Data (Proxy)
 import Data.Either (fromRight)
@@ -11,6 +13,8 @@ import Data.OpenApi (OpenApi, Operation)
 import Data.Text qualified as T
 import Data.ULID (ULID, getULID, ulidFromInteger)
 import Data.ULID.Base32 (decode)
+import Effectful (Eff, (:>))
+import Effectful.Error.Dynamic (Error, catchError, throwError)
 import Servant.OpenApi (HasOpenApi, subOperations)
 import Servant.OpenApi.Internal.TypeLevel (IsSubAPI)
 
@@ -39,3 +43,9 @@ infoSubApi sub operationLens api = subOperations sub api %~ operationLens
 
 showText :: (Show s) => s -> T.Text
 showText = T.pack . show
+
+catchesEff :: (Foldable t, Error SomeException :> es) => Eff es a -> t (Handler (Eff es) a) -> Eff es a
+catchesEff eff handlers = eff `catchError` const handle
+ where
+  handle e = Prelude.foldr (tryHandler e) (throwError e) handlers
+  tryHandler e (Handler handler) res = maybe res handler $ fromException e
