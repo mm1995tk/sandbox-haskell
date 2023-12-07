@@ -28,6 +28,9 @@ dependencies:
   - bytestring
   - bytestring-conversion
   - comonad
+  - free
+  - recursion-schemes
+  - data-fix
   - safe-exceptions
   - mtl
   - effectful

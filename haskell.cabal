@@ -83,10 +83,12 @@ library
     , comonad
     , conduit
     , containers
+    , data-fix
     , effectful
     , effectful-core
     , effectful-plugin
     , effectful-th
+    , free
     , hashable
     , hasql
     , hasql-pool
@@ -101,6 +103,7 @@ library
     , mtl
     , openapi3
     , profunctors
+    , recursion-schemes
     , safe-exceptions
     , servant-openapi3
     , servant-server
@@ -144,10 +147,12 @@ executable haskell-exe
     , comonad
     , conduit
     , containers
+    , data-fix
     , effectful
     , effectful-core
     , effectful-plugin
     , effectful-th
+    , free
     , hashable
     , haskell
     , hasql
@@ -163,6 +168,7 @@ executable haskell-exe
     , mtl
     , openapi3
     , profunctors
+    , recursion-schemes
     , safe-exceptions
     , servant-openapi3
     , servant-server
@@ -213,10 +219,12 @@ test-suite haskell-test
     , comonad
     , conduit
     , containers
+    , data-fix
     , effectful
     , effectful-core
     , effectful-plugin
     , effectful-th
+    , free
     , hashable
     , haskell
     , hasql
@@ -234,6 +242,7 @@ test-suite haskell-test
     , mtl
     , openapi3
     , profunctors
+    , recursion-schemes
     , safe-exceptions
     , servant-openapi3
     , servant-server
