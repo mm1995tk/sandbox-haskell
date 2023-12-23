@@ -6,6 +6,7 @@ module ApiExample.Config.Env (
   database,
   dbPoolSize,
   dbPoolLifetime,
+  dbConnectionTimeout,
   dbPoolIdletime,
 ) where
 
@@ -43,6 +44,10 @@ dbPoolLifetime = unsafePerformIO $ read @Integer <$> getEnv "MAXIMAL_CONNECTION_
 {-# NOINLINE dbPoolIdletime #-}
 dbPoolIdletime :: Integer
 dbPoolIdletime = unsafePerformIO $ read @Integer <$> getEnv "MAXIMAL_CONNECTION_IDLE_TIME"
+
+dbConnectionTimeout :: Integer
+{-# NOINLINE dbConnectionTimeout #-}
+dbConnectionTimeout = unsafePerformIO $ read @Integer <$> getEnv "DB_CONNECTION_TIMEOUT"
 
 getEnv' :: ByteString -> ByteString
 getEnv' s = unsafePerformIO $ fromMaybe (error "does not exist (no environment variable)") <$> PEB.getEnv s

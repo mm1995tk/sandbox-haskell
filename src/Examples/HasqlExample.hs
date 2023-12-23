@@ -39,7 +39,7 @@ notRelease f = do
   (pool,) <$> use pool f'
 
 getPool :: IO Pool
-getPool = acquire 10 (secondsToDiffTime 30) (secondsToDiffTime 30 * 5) $ settings "localhost" 5431 "postgres" "postgres" "postgres"
+getPool = acquire 10 (secondsToDiffTime 60) (secondsToDiffTime 30) (secondsToDiffTime 30 * 5) $ settings "localhost" 5431 "postgres" "postgres" "postgres"
 
 -- cleanUpDb :: IO (Either UsageError ())
 -- cleanUpDb = inConnection $ statement () $ Statement "truncate person" E.noParams D.noResult True
@@ -116,8 +116,8 @@ createPerson = flip statement insertProduct
 
 findOne :: Text -> Session (Maybe Person)
 findOne =
-  flip statement
-    $ fmap
+  flip statement $
+    fmap
       (fmap \(personId, fullName, age) -> Person{..})
       [maybeStatement|
     select 
@@ -130,8 +130,8 @@ findOne =
 
 findMany :: Int32 -> Session (Vector Person)
 findMany =
-  flip statement
-    $ fmap
+  flip statement $
+    fmap
       (fmap \(personId, fullName, age) -> Person{..})
       [vectorStatement|
     select 
@@ -144,8 +144,8 @@ findMany =
 
 findMany' :: [Int32] -> Session (Vector Person)
 findMany' xs =
-  statement (fromList xs)
-    $ fmap
+  statement (fromList xs) $
+    fmap
       (fmap \(personId, fullName, age) -> Person{..})
       [vectorStatement|
     select 

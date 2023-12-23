@@ -1,4 +1,4 @@
-resolver: lts-21.21
+resolver: lts-22.0
 
 packages:
   - .
@@ -8,6 +8,9 @@ allow-newer: true
 extra-deps:
   - validation-selective-0.2.0.0
   - bytestring-conversion-0.3.2
+  - morpheus-graphql-0.27.3
+  - morpheus-graphql-code-gen-0.27.3
+  - effectful-plugin-1.1.0.2
 
   # .stack/config.yamlにallow-newer: trueを追加
   - haxl-2.4.0.0

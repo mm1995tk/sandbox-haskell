@@ -19,6 +19,27 @@ packages:
   original:
     hackage: bytestring-conversion-0.3.2
 - completed:
+    hackage: morpheus-graphql-0.27.3@sha256:d1b8ecd2093fca77b051f20ab92ea3a26e52e701f48ebcff5f479a23687c7af8,17690
+    pantry-tree:
+      sha256: e58d86efcc1551b4963cdd4e8756710c3cc187b168a3c0663a5a1d1b64d2a3cd
+      size: 22603
+  original:
+    hackage: morpheus-graphql-0.27.3
+- completed:
+    hackage: morpheus-graphql-code-gen-0.27.3@sha256:7b4039f7d225f9e93600aab2e48581e9ca68b5fc1c31bd97a8985866defe92f2,2700
+    pantry-tree:
+      sha256: 53b7b6268ba9a398ed99737065ff4424ccbe9168fd2b8c0d43e270fcf9677228
+      size: 1124
+  original:
+    hackage: morpheus-graphql-code-gen-0.27.3
+- completed:
+    hackage: effectful-plugin-1.1.0.2@sha256:8b5d8b983dddb2b4968e1b2ba4b4c61da44d7d9bb3a92364fce4279c5724d864,2537
+    pantry-tree:
+      sha256: 4ae2687669e9f2e978c601af5e1db206ab01f41b622e260a9460f0675069c483
+      size: 412
+  original:
+    hackage: effectful-plugin-1.1.0.2
+- completed:
     hackage: haxl-2.4.0.0@sha256:6cefd8c188440f96ca7dbfae41ac5bf33756f732c682dce908cdc10b849d7959,4026
     pantry-tree:
       sha256: ec3a0e9f45b9454239ccdc72e0ac8b6ca627b94721dcd2327d123a8af10d71e9
@@ -27,7 +48,7 @@ packages:
     hackage: haxl-2.4.0.0
 snapshots:
 - completed:
-    sha256: 7d4b649cf368f9076d8aa049aa44efe58950971d105892734e9957b2a26a2186
-    size: 640060
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/21/21.yaml
-  original: lts-21.21
+    sha256: e176944bc843f740e05242fa7a66ca1f440c127e425254f7f1257f9b19add23f
+    size: 712153
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/0.yaml
+  original: lts-22.0

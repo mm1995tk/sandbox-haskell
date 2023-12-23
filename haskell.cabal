@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.2.
+-- This file has been generated from package.yaml by hpack version 0.36.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -73,7 +73,7 @@ library
       TemplateHaskell
       LambdaCase
       MultiWayIf
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -fplugin=Effectful.Plugin
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       aeson
     , async
@@ -86,7 +86,6 @@ library
     , data-fix
     , effectful
     , effectful-core
-    , effectful-plugin
     , effectful-th
     , free
     , hashable
@@ -137,7 +136,7 @@ executable haskell-exe
       TemplateHaskell
       LambdaCase
       MultiWayIf
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -fplugin=Effectful.Plugin -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , async
@@ -150,7 +149,6 @@ executable haskell-exe
     , data-fix
     , effectful
     , effectful-core
-    , effectful-plugin
     , effectful-th
     , free
     , hashable
@@ -206,7 +204,7 @@ test-suite haskell-test
       TemplateHaskell
       LambdaCase
       MultiWayIf
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -fplugin=Effectful.Plugin -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-tool-depends:
       tasty-discover:tasty-discover
   build-depends:
@@ -222,7 +220,6 @@ test-suite haskell-test
     , data-fix
     , effectful
     , effectful-core
-    , effectful-plugin
     , effectful-th
     , free
     , hashable
