@@ -79,6 +79,8 @@ dependencies:
   - hasql-th
   - hasql-pool
 
+  - Decimal
+
 default-extensions:
   - OverloadedStrings
   - GADTs

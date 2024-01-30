@@ -42,6 +42,7 @@ library
       ApiExample.OpenAPI.ListUsers
       ApiExample.Schema
       ApiExample.Server
+      Decimal
       Examples.AsyncExample
       Examples.ConduitExample
       Examples.DomainCopied
@@ -75,7 +76,8 @@ library
       MultiWayIf
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      aeson
+      Decimal
+    , aeson
     , async
     , base >=4.7 && <5
     , bytestring
@@ -138,7 +140,8 @@ executable haskell-exe
       MultiWayIf
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson
+      Decimal
+    , aeson
     , async
     , base >=4.7 && <5
     , bytestring
@@ -208,7 +211,8 @@ test-suite haskell-test
   build-tool-depends:
       tasty-discover:tasty-discover
   build-depends:
-      QuickCheck
+      Decimal
+    , QuickCheck
     , aeson
     , async
     , base >=4.7 && <5
