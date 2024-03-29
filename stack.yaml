@@ -1,4 +1,4 @@
-resolver: lts-22.11
+resolver: lts-22.14
 
 packages:
   - .
@@ -12,5 +12,5 @@ extra-deps:
   - morpheus-graphql-code-gen-0.27.3
   - effectful-plugin-1.1.0.2
 
-  # .stack/config.yamlにallow-newer: trueを追加
+  # allow-newer: trueが必要
   - haxl-2.4.0.0
