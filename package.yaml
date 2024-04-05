@@ -43,6 +43,7 @@ dependencies:
   - vector
   - profunctors
   - unix
+  - kan-extensions
 
   - morpheus-graphql
   - haxl

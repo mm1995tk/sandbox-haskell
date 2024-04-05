@@ -97,6 +97,7 @@ library
     , hasql-transaction
     , haxl
     , http-media
+    , kan-extensions
     , lens
     , lens-aeson
     , monad-par
@@ -162,6 +163,7 @@ executable haskell-exe
     , hasql-transaction
     , haxl
     , http-media
+    , kan-extensions
     , lens
     , lens-aeson
     , monad-par
@@ -236,6 +238,7 @@ test-suite haskell-test
     , hspec
     , hspec-wai
     , http-media
+    , kan-extensions
     , lens
     , lens-aeson
     , monad-par
