@@ -1,6 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE LiberalTypeSynonyms #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 
 module ApiExample.Infrastructure.Aggregate.Person where
@@ -95,9 +96,9 @@ findMany =
 
 findAll :: HS.Session (Vector Person)
 findAll =
-  HS.statement ()
-    $ (fmap \(personId, fullName, age) -> Person{age = fromIntegral age, ..})
-    <$> [vectorStatement|
+  HS.statement () $
+    (fmap \(personId, fullName, age) -> Person{age = fromIntegral age, ..})
+      <$> [vectorStatement|
     select 
       person_id :: text
       ,full_name :: text
